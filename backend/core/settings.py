@@ -98,6 +98,27 @@ class Settings(BaseSettings):
     reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     reranker_top_n: int = 3         # return this many results after reranking
     reranker_batch_size: int = 16
+
+    # Evaluation (Phase 5)
+    eval_judge_model: str = ""      # blank = use ollama_default_model
+    eval_judge_provider: str = ""   # blank = use default_provider
+    eval_max_samples: int = 50      # cap per evaluation run
+
+    # Conversational Memory (Phase 6)
+    memory_session_ttl: int = 86400           # Redis TTL per conversation in seconds (24 h)
+    memory_max_history_messages: int = 20     # messages injected into the prompt window
+    memory_enable_summarisation: bool = True  # summarise old turns when history grows large
+    memory_summary_threshold: int = 10        # summarise when turns exceed this value
+
+    # Safety & Governance — Guardrails (Phase 7)
+    guardrails_enable_injection: bool = True    # prompt injection / jailbreak detection
+    guardrails_enable_toxicity:  bool = True    # toxic language detection
+    guardrails_enable_pii:       bool = True    # PII detection & redaction
+    guardrails_enable_hallucination: bool = True  # hallucination / grounding check on output
+    guardrails_block_on_injection:   bool = True   # block request when injection detected
+    guardrails_block_on_toxicity:    bool = True   # block request when toxic content detected
+    guardrails_block_on_pii_input:   bool = False  # warn only by default (don't block on PII in input)
+    guardrails_block_on_hallucination: bool = False  # warn only by default
     
     # Logging
     log_level: str = "INFO"

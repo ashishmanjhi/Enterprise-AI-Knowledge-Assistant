@@ -113,13 +113,19 @@ with tab1:
 # Tab 2: Document Library
 with tab2:
     st.header("Document Library")
-    
-    # Refresh button
+
+    # Refresh + search (Phase 8)
     col1, col2, col3 = st.columns([1, 1, 4])
     with col1:
         if st.button("🔄 Refresh", use_container_width=True):
             st.rerun()
-    
+    with col3:
+        doc_search = st.text_input(
+            "🔍 Filter by filename",
+            placeholder="Type to filter…",
+            label_visibility="collapsed",
+        )
+
     try:
         # Fetch documents from API
         response = requests.get(
@@ -127,17 +133,24 @@ with tab2:
             params={"skip": 0, "limit": 100},
             timeout=10
         )
-        
+
         if response.status_code == 200:
             data = response.json()
             documents = data.get("documents", [])
             total = data.get("total", 0)
-            
+
+            # Phase 8: client-side filename filter
+            if doc_search:
+                documents = [d for d in documents if doc_search.lower() in d.get("filename", "").lower()]
+
             if total == 0:
                 st.info("📭 No documents uploaded yet. Upload some documents to get started!")
+            elif not documents:
+                st.warning(f"No documents match '{doc_search}'.")
             else:
-                st.success(f"📚 {total} document(s) in library")
-                
+                match_note = f" (showing {len(documents)} matching '{doc_search}')" if doc_search else ""
+                st.success(f"📚 {total} document(s) in library{match_note}")
+
                 # Display documents in a table
                 for doc in documents:
                     with st.container():

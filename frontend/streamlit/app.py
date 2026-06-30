@@ -174,42 +174,52 @@ with st.sidebar:
             st.error("❌ Ollama")
 
 # Main content area
-st.header("🎉 Welcome to Enterprise RAG Platform")
+st.header("🎉 Enterprise Agentic RAG Platform")
 
-# Phase 1 completion notice
+# Phase status banner
 st.success("""
-✅ **Phase 1: Basic RAG - Complete!**
-
-The RAG system is now fully operational with document ingestion and chat capabilities.
+✅ **Phases 0–7 Complete** — Evaluation, Conversational Memory, and Safety & Governance are all live.
+🔄 **Phase 8: User Experience** — Streaming responses, history restore, and safety badges now active.
 """)
 
-# Feature overview
-col1, col2 = st.columns(2)
+# Feature overview — 3 columns
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.subheader("📄 Document Management")
+    st.subheader("📄 Documents")
     st.markdown("""
-    **Upload and manage your documents:**
     - ✅ PDF & DOCX support
-    - ✅ Automatic chunking
-    - ✅ Embedding generation (BAAI/bge-small-en-v1.5)
-    - ✅ FAISS vector indexing
-    - ✅ Background processing
-    
-    👉 Go to **Documents** page to upload files
+    - ✅ Intelligent chunking
+    - ✅ BAAI/bge-small-en-v1.5 embeddings
+    - ✅ FAISS + BM25 hybrid indexing
+    - ✅ Filename search filter *(Phase 8)*
+
+    👉 **Documents** page
     """)
 
 with col2:
-    st.subheader("💬 RAG Chat")
+    st.subheader("💬 Chat")
     st.markdown("""
-    **Chat with your documents:**
-    - ✅ Context-aware responses
-    - ✅ Source attribution
-    - ✅ Local LLM (Ollama)
-    - ✅ Adjustable parameters
-    - ✅ Conversation history
-    
-    👉 Go to **Chat** page to start asking questions
+    - ✅ Hybrid / Semantic / Keyword retrieval
+    - ✅ Query Understanding (HyDE, expansion)
+    - ✅ Cross-encoder reranking
+    - ✅ Conversational memory (Redis)
+    - ✅ Streaming responses *(Phase 8)*
+    - ✅ Safety guardrails (injection, PII, toxicity)
+
+    👉 **Chat** page
+    """)
+
+with col3:
+    st.subheader("📊 Evaluate")
+    st.markdown("""
+    - ✅ RAGAS faithfulness
+    - ✅ Answer relevancy
+    - ✅ Context precision/recall
+    - ✅ Manual + JSON batch input
+    - ✅ LLM-as-judge metrics
+
+    👉 **Evaluate** page
     """)
 
 st.divider()

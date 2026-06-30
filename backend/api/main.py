@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.settings import settings
 from backend.core.logging import logger
-from backend.api.routes import health, status, documents, chat, admin
+from backend.api.routes import health, status, documents, chat, admin, evaluate, memory, guardrails
 
 
 def create_app() -> FastAPI:
@@ -42,6 +42,15 @@ def create_app() -> FastAPI:
     
     # Admin endpoints
     app.include_router(admin.router, tags=["admin"])
+
+    # Phase 5: Evaluation endpoints
+    app.include_router(evaluate.router, tags=["evaluation"])
+
+    # Phase 6: Memory endpoints
+    app.include_router(memory.router, tags=["memory"])
+
+    # Phase 7: Guardrails endpoints
+    app.include_router(guardrails.router, tags=["guardrails"])
     
     @app.on_event("startup")
     async def startup_event():
@@ -74,7 +83,10 @@ def create_app() -> FastAPI:
                 "health": "/health",
                 "documents": "/api/v1/documents",
                 "chat": "/api/v1/chat",
-                "admin": "/api/v1/admin"
+                "admin": "/api/v1/admin",
+                "evaluate": "/api/v1/evaluate",
+                "memory":      "/api/v1/memory",
+                "guardrails":  "/api/v1/guardrails",
             }
         }
     
