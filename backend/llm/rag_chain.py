@@ -9,6 +9,7 @@ from backend.retrievers.retriever import DocumentRetriever, RetrievalResult
 from backend.retrievers.hybrid_retriever import HybridRetriever, HybridRetrievalResult
 from backend.llm.llm_service import LLMService
 from backend.query_understanding.query_processor import QueryProcessor, QueryUnderstandingOptions
+from backend.rerankers.cross_encoder import CrossEncoderReranker
 from backend.core.settings import settings
 from backend.core.logging import get_logger
 
@@ -27,7 +28,8 @@ class RAGChain:
         retriever: Optional[HybridRetriever] = None,
         llm_service: Optional[LLMService] = None,
         use_hybrid: bool = True,
-        query_processor: Optional[QueryProcessor] = None
+        query_processor: Optional[QueryProcessor] = None,
+        reranker: Optional[CrossEncoderReranker] = None
     ):
         """
         Initialize RAG chain.
@@ -37,6 +39,7 @@ class RAGChain:
             llm_service: LLM service for generation
             use_hybrid: Whether to use hybrid retrieval (default: True)
             query_processor: Query understanding processor (Phase 3)
+            reranker: Cross-encoder reranker (Phase 4). None = use settings default.
         """
         if use_hybrid:
             self.retriever = retriever or HybridRetriever()
@@ -45,12 +48,25 @@ class RAGChain:
             # Backward compatibility with basic retriever
             self.retriever = retriever or DocumentRetriever()
             self.is_hybrid = False
-        
+
         self.llm_service = llm_service or LLMService()
         self.query_processor = query_processor or QueryProcessor(llm_service=self.llm_service)
-        
+
+        # Reranker: instantiate with settings defaults; None means disabled
+        if reranker is not None:
+            self.reranker: Optional[CrossEncoderReranker] = reranker
+        elif settings.enable_reranking:
+            self.reranker = CrossEncoderReranker(
+                model_name=settings.reranker_model,
+                top_n=settings.reranker_top_n,
+                batch_size=settings.reranker_batch_size,
+            )
+        else:
+            self.reranker = None
+
         retriever_type = "HybridRetriever" if self.is_hybrid else "DocumentRetriever"
-        logger.info(f"Initialized RAGChain with {retriever_type} and QueryProcessor")
+        reranker_info = f"reranker={settings.reranker_model}" if self.reranker else "reranker=off"
+        logger.info(f"Initialized RAGChain with {retriever_type}, QueryProcessor, {reranker_info}")
     
     async def generate_response(
         self,
@@ -61,7 +77,8 @@ class RAGChain:
         temperature: float = 0.7,
         max_tokens: int = 500,
         retrieval_method: Optional[Literal["hybrid", "faiss", "bm25"]] = None,
-        query_understanding_options: Optional[QueryUnderstandingOptions] = None
+        query_understanding_options: Optional[QueryUnderstandingOptions] = None,
+        use_reranking: Optional[bool] = None
     ) -> Dict[str, Any]:
         """
         Generate a response using RAG.
@@ -75,6 +92,7 @@ class RAGChain:
             max_tokens: Maximum tokens in response
             retrieval_method: Retrieval method (hybrid/faiss/bm25), uses default if None
             query_understanding_options: Phase 3 query processing options
+            use_reranking: Override reranking on/off per request. None = use instance default.
             
         Returns:
             Dictionary with response, sources, and metadata
@@ -142,13 +160,35 @@ class RAGChain:
                 )
             
             retrieval_time = time.time() - retrieval_start
-            
+
             logger.info(
                 f"Retrieved {len(retrieval_results)} documents "
                 f"using {retrieval_method} in {retrieval_time:.3f}s"
             )
-            
-            # Step 3: Build prompt with context
+
+            # Step 3: Rerank (Phase 4) — optional second-pass scoring
+            reranking_applied = False
+            should_rerank = (
+                use_reranking if use_reranking is not None else self.reranker is not None
+            )
+            if should_rerank and self.reranker is not None and retrieval_results:
+                rerank_start = time.time()
+                retrieval_results = self.reranker.rerank(
+                    query=retrieval_query,
+                    results=list(retrieval_results),
+                )
+                reranking_applied = True
+                logger.info(
+                    f"Reranking complete in {time.time() - rerank_start:.3f}s, "
+                    f"{len(retrieval_results)} results kept"
+                )
+                # Re-format context with reranked order
+                if self.is_hybrid:
+                    context = self.retriever.format_context(  # type: ignore
+                        retrieval_results, max_length=3000, include_metadata=True
+                    )
+
+            # Step 4: Build prompt with context
             # Use original query for the prompt so the answer stays on-topic
             prompt = self._build_prompt(
                 query=query,
@@ -185,7 +225,8 @@ class RAGChain:
                     "generation_time": generation_time,
                     "total_time": total_time,
                     "documents_retrieved": len(retrieval_results),
-                    "retrieval_method": retrieval_method
+                    "retrieval_method": retrieval_method,
+                    "reranking_applied": reranking_applied,
                 }
             }
 
@@ -208,7 +249,8 @@ class RAGChain:
         temperature: float = 0.7,
         max_tokens: int = 500,
         retrieval_method: Optional[Literal["hybrid", "faiss", "bm25"]] = None,
-        query_understanding_options: Optional[QueryUnderstandingOptions] = None
+        query_understanding_options: Optional[QueryUnderstandingOptions] = None,
+        use_reranking: Optional[bool] = None
     ):
         """
         Generate a streaming response using RAG.
@@ -255,11 +297,8 @@ class RAGChain:
                     method=retrieval_method,
                     faiss_query=faiss_query
                 )
-                # Format context using hybrid retriever's method
                 context = self.retriever.format_context(  # type: ignore
-                    retrieval_results,
-                    max_length=3000,
-                    include_metadata=True
+                    retrieval_results, max_length=3000, include_metadata=True
                 )
             else:
                 retrieval_results = await self.retriever.retrieve(  # type: ignore
@@ -267,14 +306,25 @@ class RAGChain:
                     top_k=top_k,
                     document_ids=document_ids
                 )
-                # Format context using basic retriever's method
                 context = self.retriever.format_context(  # type: ignore
-                    retrieval_results,
-                    max_length=3000,
-                    include_metadata=True
+                    retrieval_results, max_length=3000, include_metadata=True
                 )
-            
-            # Step 3: Build prompt
+
+            # Step 3: Rerank (Phase 4)
+            should_rerank = (
+                use_reranking if use_reranking is not None else self.reranker is not None
+            )
+            if should_rerank and self.reranker is not None and retrieval_results:
+                retrieval_results = self.reranker.rerank(
+                    query=retrieval_query,
+                    results=list(retrieval_results),
+                )
+                if self.is_hybrid:
+                    context = self.retriever.format_context(  # type: ignore
+                        retrieval_results, max_length=3000, include_metadata=True
+                    )
+
+            # Step 4: Build prompt
             prompt = self._build_prompt(
                 query=query,
                 context=context,

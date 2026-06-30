@@ -74,7 +74,8 @@ async def chat(request: ChatRequest):
             temperature=request.temperature,
             max_tokens=request.max_tokens,
             retrieval_method=request.retrieval_method,
-            query_understanding_options=qu_options
+            query_understanding_options=qu_options,
+            use_reranking=request.use_reranking
         )
         
         # Format sources with proper defaults

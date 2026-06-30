@@ -98,7 +98,22 @@ with st.sidebar:
             num_expansions = 3
     
     st.divider()
-    
+
+    # Reranking (Phase 4)
+    st.subheader("🎯 Reranking")
+    use_reranking = st.toggle(
+        "Enable Reranking",
+        value=False,
+        help=(
+            "Re-score retrieved chunks with a cross-encoder model for higher precision. "
+            "Downloads ~22 MB on first use. Adds ~0.1–0.5s latency."
+        )
+    )
+    if use_reranking:
+        st.info("cross-encoder/ms-marco-MiniLM-L-6-v2", icon="🎯")
+
+    st.divider()
+
     # Generation settings
     st.subheader("🎛️ Generation")
     temperature = st.slider(
@@ -259,6 +274,10 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                     "enable_hyde": enable_hyde,
                     "num_expansions": num_expansions
                 }
+
+            # Add reranking flag
+            if use_rag:
+                request_data["use_reranking"] = use_reranking
             
             # Show loading
             with st.spinner("Thinking..."):
@@ -382,11 +401,14 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                 }
                 method_icon = method_icons.get(ret_method, "🔍")
                 
+                reranked = data.get("metadata", {}).get("reranking_applied", False) if "metadata" in data else False
+                rerank_badge = " | 🎯 reranked" if reranked else ""
                 st.caption(
                     f"⏱️ {proc_time:.2f}s | "
                     f"🤖 {model} | "
                     f"📊 {tokens} tokens | "
                     f"{method_icon} {ret_method}"
+                    f"{rerank_badge}"
                 )
                 
             else:

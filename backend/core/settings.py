@@ -92,6 +92,12 @@ class Settings(BaseSettings):
     query_expansion_max_tokens: int = 150   # 3 short questions fit in ~150 tokens
     query_reformulation_max_tokens: int = 80    # single rewritten question
     use_technical_hyde: bool = False
+
+    # Reranking (Phase 4)
+    enable_reranking: bool = False  # off by default — requires model download on first use
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    reranker_top_n: int = 3         # return this many results after reranking
+    reranker_batch_size: int = 16
     
     # Logging
     log_level: str = "INFO"
