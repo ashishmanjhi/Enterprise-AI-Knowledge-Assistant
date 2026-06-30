@@ -70,6 +70,26 @@ class Settings(BaseSettings):
     faiss_index_path: str = "data/vectorstore/faiss_index.bin"
     metadata_path: str = "data/vectorstore/metadata.json"
     
+    # BM25 & Hybrid Retrieval (Phase 2)
+    bm25_index_path: str = "data/vectorstore/bm25_index.pkl"
+    bm25_k1: float = 1.5  # Term frequency saturation
+    bm25_b: float = 0.75  # Length normalization
+    default_retrieval_method: Literal["hybrid", "faiss", "bm25"] = "hybrid"
+    faiss_weight: float = 0.5  # Weight for FAISS in hybrid retrieval
+    bm25_weight: float = 0.5  # Weight for BM25 in hybrid retrieval
+    rrf_k: int = 60  # Reciprocal Rank Fusion constant
+    
+    # Query Understanding (Phase 3)
+    enable_query_reformulation: bool = True
+    enable_query_expansion: bool = True
+    enable_hyde: bool = True
+    num_query_expansions: int = 3
+    query_expansion_temperature: float = 0.7
+    query_reformulation_temperature: float = 0.3
+    hyde_temperature: float = 0.7
+    hyde_max_tokens: int = 500
+    use_technical_hyde: bool = False
+    
     # Logging
     log_level: str = "INFO"
     log_file: str = "logs/app.log"

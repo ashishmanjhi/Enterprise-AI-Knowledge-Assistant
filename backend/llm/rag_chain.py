@@ -3,10 +3,12 @@ RAG (Retrieval-Augmented Generation) chain.
 Combines document retrieval with LLM generation.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Literal
 import time
 from backend.retrievers.retriever import DocumentRetriever, RetrievalResult
+from backend.retrievers.hybrid_retriever import HybridRetriever, HybridRetrievalResult
 from backend.llm.llm_service import LLMService
+from backend.core.settings import settings
 from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -21,20 +23,30 @@ class RAGChain:
     
     def __init__(
         self,
-        retriever: Optional[DocumentRetriever] = None,
-        llm_service: Optional[LLMService] = None
+        retriever: Optional[HybridRetriever] = None,
+        llm_service: Optional[LLMService] = None,
+        use_hybrid: bool = True
     ):
         """
         Initialize RAG chain.
         
         Args:
-            retriever: Document retriever
+            retriever: Hybrid retriever (or basic DocumentRetriever for backward compatibility)
             llm_service: LLM service for generation
+            use_hybrid: Whether to use hybrid retrieval (default: True)
         """
-        self.retriever = retriever or DocumentRetriever()
+        if use_hybrid:
+            self.retriever = retriever or HybridRetriever()
+            self.is_hybrid = True
+        else:
+            # Backward compatibility with basic retriever
+            self.retriever = retriever or DocumentRetriever()
+            self.is_hybrid = False
+        
         self.llm_service = llm_service or LLMService()
         
-        logger.info("Initialized RAGChain")
+        retriever_type = "HybridRetriever" if self.is_hybrid else "DocumentRetriever"
+        logger.info(f"Initialized RAGChain with {retriever_type}")
     
     async def generate_response(
         self,
@@ -43,7 +55,8 @@ class RAGChain:
         document_ids: Optional[List[str]] = None,
         conversation_history: Optional[List[Dict[str, str]]] = None,
         temperature: float = 0.7,
-        max_tokens: int = 500
+        max_tokens: int = 500,
+        retrieval_method: Optional[Literal["hybrid", "faiss", "bm25"]] = None
     ) -> Dict[str, Any]:
         """
         Generate a response using RAG.
@@ -55,34 +68,52 @@ class RAGChain:
             conversation_history: Previous conversation messages
             temperature: Generation temperature
             max_tokens: Maximum tokens in response
+            retrieval_method: Retrieval method (hybrid/faiss/bm25), uses default if None
             
         Returns:
             Dictionary with response, sources, and metadata
         """
+        # Use default retrieval method if not specified
+        if retrieval_method is None:
+            retrieval_method = settings.default_retrieval_method
         start_time = time.time()
         
         try:
             # Step 1: Retrieve relevant documents
             retrieval_start = time.time()
             
-            retrieval_results = await self.retriever.retrieve(
-                query=query,
-                top_k=top_k,
-                document_ids=document_ids
-            )
+            if self.is_hybrid:
+                retrieval_results = await self.retriever.retrieve(  # type: ignore
+                    query=query,
+                    top_k=top_k,
+                    document_ids=document_ids,
+                    method=retrieval_method
+                )
+                # Format context using hybrid retriever's method
+                context = self.retriever.format_context(  # type: ignore
+                    retrieval_results,
+                    max_length=3000,
+                    include_metadata=True
+                )
+            else:
+                # Basic retriever doesn't support method parameter
+                retrieval_results = await self.retriever.retrieve(  # type: ignore
+                    query=query,
+                    top_k=top_k,
+                    document_ids=document_ids
+                )
+                # Format context using basic retriever's method
+                context = self.retriever.format_context(  # type: ignore
+                    retrieval_results,
+                    max_length=3000,
+                    include_metadata=True
+                )
             
             retrieval_time = time.time() - retrieval_start
             
             logger.info(
                 f"Retrieved {len(retrieval_results)} documents "
-                f"in {retrieval_time:.3f}s"
-            )
-            
-            # Step 2: Format context from retrieved documents
-            context = self.retriever.format_context(
-                retrieval_results,
-                max_length=3000,  # Limit context length
-                include_metadata=True
+                f"using {retrieval_method} in {retrieval_time:.3f}s"
             )
             
             # Step 3: Build prompt with context
@@ -120,7 +151,8 @@ class RAGChain:
                     "retrieval_time": retrieval_time,
                     "generation_time": generation_time,
                     "total_time": total_time,
-                    "documents_retrieved": len(retrieval_results)
+                    "documents_retrieved": len(retrieval_results),
+                    "retrieval_method": retrieval_method
                 }
             }
             
@@ -135,7 +167,8 @@ class RAGChain:
         document_ids: Optional[List[str]] = None,
         conversation_history: Optional[List[Dict[str, str]]] = None,
         temperature: float = 0.7,
-        max_tokens: int = 500
+        max_tokens: int = 500,
+        retrieval_method: Optional[Literal["hybrid", "faiss", "bm25"]] = None
     ):
         """
         Generate a streaming response using RAG.
@@ -147,24 +180,41 @@ class RAGChain:
             conversation_history: Previous conversation messages
             temperature: Generation temperature
             max_tokens: Maximum tokens in response
+            retrieval_method: Retrieval method (hybrid/faiss/bm25)
             
         Yields:
             Response chunks
         """
+        # Use default retrieval method if not specified
+        if retrieval_method is None:
+            retrieval_method = settings.default_retrieval_method
         try:
             # Step 1: Retrieve relevant documents
-            retrieval_results = await self.retriever.retrieve(
-                query=query,
-                top_k=top_k,
-                document_ids=document_ids
-            )
-            
-            # Step 2: Format context
-            context = self.retriever.format_context(
-                retrieval_results,
-                max_length=3000,
-                include_metadata=True
-            )
+            if self.is_hybrid:
+                retrieval_results = await self.retriever.retrieve(  # type: ignore
+                    query=query,
+                    top_k=top_k,
+                    document_ids=document_ids,
+                    method=retrieval_method
+                )
+                # Format context using hybrid retriever's method
+                context = self.retriever.format_context(  # type: ignore
+                    retrieval_results,
+                    max_length=3000,
+                    include_metadata=True
+                )
+            else:
+                retrieval_results = await self.retriever.retrieve(  # type: ignore
+                    query=query,
+                    top_k=top_k,
+                    document_ids=document_ids
+                )
+                # Format context using basic retriever's method
+                context = self.retriever.format_context(  # type: ignore
+                    retrieval_results,
+                    max_length=3000,
+                    include_metadata=True
+                )
             
             # Step 3: Build prompt
             prompt = self._build_prompt(
@@ -243,13 +293,13 @@ class RAGChain:
     
     def _format_sources(
         self,
-        retrieval_results: List[RetrievalResult]
+        retrieval_results: List
     ) -> List[Dict[str, Any]]:
         """
         Format retrieval results as source references.
         
         Args:
-            retrieval_results: List of retrieval results
+            retrieval_results: List of retrieval results (RetrievalResult or HybridRetrievalResult)
             
         Returns:
             List of formatted sources
@@ -265,6 +315,19 @@ class RAGChain:
                 "score": round(result.score, 3),
                 "page_number": result.page_number
             }
+            
+            # Add hybrid-specific metadata if available
+            if hasattr(result, 'retrieval_method'):
+                source["retrieval_method"] = result.retrieval_method
+            if hasattr(result, 'faiss_score') and result.faiss_score is not None:
+                source["faiss_score"] = round(result.faiss_score, 3)
+            if hasattr(result, 'bm25_score') and result.bm25_score is not None:
+                source["bm25_score"] = round(result.bm25_score, 3)
+            if hasattr(result, 'faiss_rank') and result.faiss_rank is not None:
+                source["faiss_rank"] = result.faiss_rank
+            if hasattr(result, 'bm25_rank') and result.bm25_rank is not None:
+                source["bm25_rank"] = result.bm25_rank
+            
             sources.append(source)
         
         return sources

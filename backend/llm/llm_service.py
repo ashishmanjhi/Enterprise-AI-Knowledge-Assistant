@@ -111,6 +111,12 @@ class LLMService:
             data = response.json()
             generated_text = data.get("response", "")
             
+            # Debug logging
+            if not generated_text:
+                logger.warning(f"Ollama returned empty response. Full data: {data}")
+            else:
+                logger.info(f"Ollama generated {len(generated_text)} characters")
+            
             result = {
                 "text": generated_text,
                 "model": self.model,

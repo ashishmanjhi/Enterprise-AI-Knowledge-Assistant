@@ -15,6 +15,9 @@ from backend.ingestion.metadata import (
 )
 from backend.llm.embeddings import EmbeddingService
 from backend.retrievers.vector_store import FAISSVectorStore
+from backend.retrievers.vector_store_manager import get_shared_vector_store
+from backend.retrievers.bm25_retriever import BM25Retriever
+from backend.retrievers.bm25_manager import get_shared_bm25_retriever
 from backend.core.settings import settings
 from backend.core.logging import get_logger
 
@@ -37,6 +40,7 @@ class IngestionPipeline:
         self,
         embedding_service: Optional[EmbeddingService] = None,
         vector_store: Optional[FAISSVectorStore] = None,
+        bm25_retriever: Optional[BM25Retriever] = None,
         chunker: Optional[DocumentChunker] = None
     ):
         """
@@ -44,11 +48,13 @@ class IngestionPipeline:
         
         Args:
             embedding_service: Service for generating embeddings
-            vector_store: Vector store for indexing
+            vector_store: Vector store for indexing (uses shared instance if not provided)
+            bm25_retriever: BM25 retriever for keyword indexing (uses shared instance if not provided)
             chunker: Text chunker
         """
         self.embedding_service = embedding_service or EmbeddingService()
-        self.vector_store = vector_store or FAISSVectorStore()
+        self.vector_store = vector_store or get_shared_vector_store()
+        self.bm25_retriever = bm25_retriever or get_shared_bm25_retriever()
         self.chunker = chunker or DocumentChunker()
         
         # Initialize loaders
@@ -59,7 +65,7 @@ class IngestionPipeline:
         
         self.metadata_manager = MetadataManager()
         
-        logger.info("Initialized IngestionPipeline")
+        logger.info(f"Initialized IngestionPipeline with hybrid indexing (BM25: {len(self.bm25_retriever.documents)} docs)")
     
     async def ingest_document(
         self,
@@ -99,12 +105,17 @@ class IngestionPipeline:
             # Step 4: Generate embeddings
             embeddings = await self._generate_embeddings(chunks)
             
-            # Step 5: Index in vector store
+            # Step 5: Index in FAISS vector store
             await self._index_chunks(chunks, embeddings)
             
-            # Step 6: Save index if requested
+            # Step 6: Index in BM25 retriever
+            await self._index_bm25(chunks)
+            
+            # Step 7: Save indices if requested
             if save_index:
                 self.vector_store.save()
+                self.bm25_retriever.save()
+                logger.info("Saved FAISS and BM25 indices")
             
             # Calculate processing time
             processing_time = time.time() - start_time
@@ -170,10 +181,11 @@ class IngestionPipeline:
             )
             results.append(result)
         
-        # Save index once after all documents
+        # Save indices once after all documents
         if save_index:
             self.vector_store.save()
-            logger.info("Saved vector store after batch ingestion")
+            self.bm25_retriever.save()
+            logger.info("Saved FAISS and BM25 indices after batch ingestion")
         
         # Calculate statistics
         successful = sum(1 for r in results if r["status"] == "success")
@@ -343,7 +355,41 @@ class IngestionPipeline:
             chunk_ids
         )
         
-        logger.info(f"Indexed {len(chunks)} chunks in vector store")
+        logger.info(f"Indexed {len(chunks)} chunks in FAISS vector store")
+    
+    async def _index_bm25(self, chunks: List[Dict[str, Any]]):
+        """
+        Index chunks in BM25 retriever for keyword search.
+        
+        Args:
+            chunks: List of chunk dictionaries
+        """
+        # Prepare documents for BM25
+        bm25_documents = []
+        
+        for chunk in chunks:
+            # Generate chunk ID if not present
+            if "chunk_id" not in chunk:
+                chunk_id = f"chunk_{chunk.get('document_id', 'unknown')}_{chunk.get('chunk_index', 0)}"
+            else:
+                chunk_id = chunk["chunk_id"]
+            
+            bm25_doc = {
+                "chunk_id": chunk_id,
+                "content": chunk["content"],
+                "metadata": {
+                    "document_id": chunk.get("document_id"),
+                    "filename": chunk.get("filename"),
+                    "page_number": chunk.get("page_number"),
+                    "chunk_index": chunk.get("chunk_index")
+                }
+            }
+            bm25_documents.append(bm25_doc)
+        
+        # Add to BM25 retriever
+        self.bm25_retriever.add_documents(bm25_documents)
+        
+        logger.info(f"Indexed {len(chunks)} chunks in BM25 retriever")
     
     def get_stats(self) -> Dict[str, Any]:
         """
@@ -354,6 +400,7 @@ class IngestionPipeline:
         """
         return {
             "vector_store": self.vector_store.get_stats(),
+            "bm25_retriever": self.bm25_retriever.get_stats(),
             "embedding_service": self.embedding_service.get_model_info(),
             "chunker": {
                 "chunk_size": self.chunker.chunk_size,

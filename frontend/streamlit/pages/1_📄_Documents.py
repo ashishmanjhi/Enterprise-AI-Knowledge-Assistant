@@ -23,6 +23,8 @@ st.markdown("Upload and manage documents for the RAG knowledge base")
 # Initialize session state
 if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = []
+if 'upload_key' not in st.session_state:
+    st.session_state.upload_key = 0
 
 # Tabs for different sections
 tab1, tab2, tab3 = st.tabs(["📤 Upload", "📚 Library", "📊 Statistics"])
@@ -32,12 +34,13 @@ with tab1:
     st.header("Upload Documents")
     st.markdown("Upload PDF or DOCX files to add them to the knowledge base")
     
-    # File uploader
+    # File uploader with dynamic key to reset after upload
     uploaded_files = st.file_uploader(
         "Choose files",
         type=["pdf", "docx"],
         accept_multiple_files=True,
-        help="Upload PDF or DOCX files (max 10MB each)"
+        help="Upload PDF or DOCX files (max 10MB each)",
+        key=f"file_uploader_{st.session_state.upload_key}"
     )
     
     col1, col2 = st.columns([1, 4])
@@ -88,6 +91,8 @@ with tab1:
         
         if successful > 0:
             st.balloons()
+            # Increment key to reset file uploader
+            st.session_state.upload_key += 1
             time.sleep(1)
             st.rerun()
     
@@ -223,6 +228,59 @@ with tab3:
                 st.text(f"Model: {embedding_info.get('model_name', 'N/A')}")
             with col2:
                 st.text(f"Dimension: {embedding_info.get('dimension', 'N/A')}")
+            
+            st.divider()
+            
+            # Admin actions
+            st.subheader("⚙️ Admin Actions")
+            st.warning("⚠️ **Danger Zone**: These actions cannot be undone!")
+            
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                if st.button("🗑️ Clear All Data", type="secondary", use_container_width=True):
+                    st.session_state.confirm_clear = True
+            
+            # Confirmation dialog
+            if st.session_state.get('confirm_clear', False):
+                st.error("⚠️ **Are you absolutely sure?**")
+                st.markdown("""
+                This will permanently delete:
+                - All FAISS vectors
+                - All BM25 indices
+                - All document metadata
+                
+                You will need to re-upload all documents!
+                """)
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    if st.button("✅ Yes, Clear Everything", type="primary"):
+                        try:
+                            with st.spinner("Clearing vector stores..."):
+                                clear_response = requests.post(
+                                    f"{API_BASE_URL}/api/v1/admin/clear-vector-stores",
+                                    timeout=10
+                                )
+                            
+                            if clear_response.status_code == 200:
+                                result = clear_response.json()
+                                st.success("✅ Vector stores cleared successfully!")
+                                st.json(result)
+                                st.info("🔄 Please restart the backend to reload empty indices")
+                                st.session_state.confirm_clear = False
+                                time.sleep(2)
+                                st.rerun()
+                            else:
+                                st.error(f"❌ Failed: {clear_response.text}")
+                                st.session_state.confirm_clear = False
+                        except Exception as e:
+                            st.error(f"❌ Error: {str(e)}")
+                            st.session_state.confirm_clear = False
+                
+                with col2:
+                    if st.button("❌ No, Cancel"):
+                        st.session_state.confirm_clear = False
+                        st.rerun()
             
         else:
             st.error(f"❌ Failed to fetch statistics: {response.text}")

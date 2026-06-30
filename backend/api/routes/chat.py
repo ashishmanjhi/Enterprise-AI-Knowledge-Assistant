@@ -60,19 +60,25 @@ async def chat(request: ChatRequest):
             document_ids=request.document_ids,
             conversation_history=history_dicts,
             temperature=request.temperature,
-            max_tokens=request.max_tokens
+            max_tokens=request.max_tokens,
+            retrieval_method=request.retrieval_method
         )
         
-        # Format sources
+        # Format sources with proper defaults
         sources = []
         for source in result.get("sources", []):
             sources.append(SourceReference(
-                document_id=source["document_id"],
-                filename=source["filename"],
-                chunk_id=source["chunk_id"],
-                content=source["content"],
-                score=source["score"],
-                page_number=source.get("page_number")
+                document_id=source.get("document_id") or "unknown",
+                filename=source.get("filename") or "unknown",
+                chunk_id=source.get("chunk_id") or "unknown",
+                content=source.get("content") or "",
+                score=source.get("score", 0.0),
+                page_number=source.get("page_number"),
+                retrieval_method=source.get("retrieval_method"),
+                faiss_score=source.get("faiss_score"),
+                bm25_score=source.get("bm25_score"),
+                faiss_rank=source.get("faiss_rank"),
+                bm25_rank=source.get("bm25_rank")
             ))
         
         # Create response message
@@ -91,7 +97,8 @@ async def chat(request: ChatRequest):
             sources=sources,
             model=metadata.get("model", "unknown"),
             tokens_used=metadata.get("tokens_used", 0),
-            processing_time=metadata.get("total_time", 0.0)
+            processing_time=metadata.get("total_time", 0.0),
+            retrieval_method=metadata.get("retrieval_method")
         )
         
     except Exception as e:
@@ -126,7 +133,8 @@ async def chat_stream(request: StreamChatRequest):
                     document_ids=None,
                     conversation_history=None,
                     temperature=request.temperature,
-                    max_tokens=request.max_tokens
+                    max_tokens=request.max_tokens,
+                    retrieval_method=request.retrieval_method
                 ):
                     # Format chunk as SSE
                     if chunk.get("type") == "token":

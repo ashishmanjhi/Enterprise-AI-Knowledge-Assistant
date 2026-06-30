@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.settings import settings
 from backend.core.logging import logger
-from backend.api.routes import health, status, documents, chat
+from backend.api.routes import health, status, documents, chat, admin
 
 
 def create_app() -> FastAPI:
@@ -40,6 +40,9 @@ def create_app() -> FastAPI:
     app.include_router(documents.router, tags=["documents"])
     app.include_router(chat.router, tags=["chat"])
     
+    # Admin endpoints
+    app.include_router(admin.router, tags=["admin"])
+    
     @app.on_event("startup")
     async def startup_event():
         """Application startup event handler."""
@@ -70,7 +73,8 @@ def create_app() -> FastAPI:
                 "docs": "/docs",
                 "health": "/health",
                 "documents": "/api/v1/documents",
-                "chat": "/api/v1/chat"
+                "chat": "/api/v1/chat",
+                "admin": "/api/v1/admin"
             }
         }
     

@@ -85,8 +85,10 @@ async def upload_document(
         # Generate document ID
         document_id = f"doc_{uuid.uuid4().hex[:12]}"
         
-        # Save file
-        file_path = UPLOAD_DIR / f"{document_id}{file_ext}"
+        # Save file with original name prefixed by document ID
+        # Format: doc_xxxxx_originalname.ext
+        safe_filename = file.filename.replace(" ", "_").replace("/", "_").replace("\\", "_")
+        file_path = UPLOAD_DIR / f"{document_id}_{safe_filename}"
         
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(file.file, buffer)

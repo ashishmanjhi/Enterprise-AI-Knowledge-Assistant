@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Optional
 import time
 from backend.llm.embeddings import EmbeddingService
 from backend.retrievers.vector_store import FAISSVectorStore
+from backend.retrievers.vector_store_manager import get_shared_vector_store
 from backend.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -79,12 +80,13 @@ class DocumentRetriever:
         
         Args:
             embedding_service: Service for generating query embeddings
-            vector_store: Vector store for similarity search
+            vector_store: Vector store for similarity search (uses shared instance if not provided)
         """
         self.embedding_service = embedding_service or EmbeddingService()
-        self.vector_store = vector_store or FAISSVectorStore()
+        self.vector_store = vector_store or get_shared_vector_store()
         
         logger.info("Initialized DocumentRetriever")
+        logger.info(f"Vector store contains {self.vector_store.index.ntotal} vectors")
     
     async def retrieve(
         self,

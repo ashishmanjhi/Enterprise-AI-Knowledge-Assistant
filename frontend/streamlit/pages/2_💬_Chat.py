@@ -34,6 +34,23 @@ with st.sidebar:
     use_rag = st.toggle("Use RAG", value=True, help="Enable document retrieval")
     
     if use_rag:
+        st.subheader("🔍 Retrieval Method")
+        retrieval_method = st.radio(
+            "Select method",
+            options=["hybrid", "faiss", "bm25"],
+            index=0,
+            help="Hybrid combines semantic (FAISS) and keyword (BM25) search",
+            horizontal=True
+        )
+        
+        # Show method description
+        method_descriptions = {
+            "hybrid": "🔀 **Hybrid**: Best of both - combines semantic understanding with exact keyword matching",
+            "faiss": "🧠 **Semantic**: Understands meaning and context, finds conceptually similar content",
+            "bm25": "🔤 **Keyword**: Exact term matching, great for technical terms and specific phrases"
+        }
+        st.info(method_descriptions[retrieval_method])
+        
         top_k = st.slider(
             "Documents to retrieve",
             min_value=1,
@@ -43,6 +60,7 @@ with st.sidebar:
         )
     else:
         top_k = 5
+        retrieval_method = "hybrid"
     
     # Generation settings
     st.subheader("🎛️ Generation")
@@ -57,11 +75,11 @@ with st.sidebar:
     
     max_tokens = st.slider(
         "Max tokens",
-        min_value=100,
+        min_value=300,
         max_value=2000,
-        value=500,
+        value=800,
         step=100,
-        help="Maximum length of response"
+        help="Maximum length of response (qwen3 needs 500+ for thinking + answer)"
     )
     
     st.divider()
@@ -107,9 +125,11 @@ with st.sidebar:
     st.markdown("""
     ### 💡 Tips
     - Upload documents first in the Documents page
-    - Enable RAG to use document context
+    - **Hybrid** retrieval combines semantic + keyword search
+    - **Semantic** finds conceptually similar content
+    - **Keyword** matches exact terms and phrases
     - Adjust temperature for creativity
-    - Sources are shown with each response
+    - Sources show retrieval method and scores
     """)
 
 # Main chat interface
@@ -127,10 +147,41 @@ with chat_container:
                 if sources:
                     with st.expander(f"📚 Sources ({len(sources)})"):
                         for idx, source in enumerate(sources, 1):
-                            st.markdown(f"**{idx}. {source['filename']}**")
-                            if source.get('page_number'):
-                                st.caption(f"Page {source['page_number']}")
-                            st.text(f"Score: {source['score']:.3f}")
+                            # Create columns for source display
+                            col1, col2 = st.columns([3, 1])
+                            
+                            with col1:
+                                st.markdown(f"**{idx}. {source['filename']}**")
+                                if source.get('page_number'):
+                                    st.caption(f"📄 Page {source['page_number']}")
+                            
+                            with col2:
+                                # Show retrieval method badge
+                                method = source.get('retrieval_method', 'unknown')
+                                if method == 'hybrid':
+                                    st.markdown("🔀 **Hybrid**")
+                                elif method == 'faiss':
+                                    st.markdown("🧠 **Semantic**")
+                                elif method == 'bm25':
+                                    st.markdown("🔤 **Keyword**")
+                            
+                            # Show scores
+                            score_text = f"**Overall Score:** {source['score']:.3f}"
+                            
+                            # Show individual scores for hybrid results
+                            if source.get('faiss_score') is not None or source.get('bm25_score') is not None:
+                                score_parts = []
+                                if source.get('faiss_score') is not None:
+                                    rank_text = f"#{source.get('faiss_rank', '?')}" if source.get('faiss_rank') else ""
+                                    score_parts.append(f"Semantic: {source['faiss_score']:.3f} {rank_text}")
+                                if source.get('bm25_score') is not None:
+                                    rank_text = f"#{source.get('bm25_rank', '?')}" if source.get('bm25_rank') else ""
+                                    score_parts.append(f"Keyword: {source['bm25_score']:.3f} {rank_text}")
+                                score_text += f" ({', '.join(score_parts)})"
+                            
+                            st.text(score_text)
+                            
+                            # Show content
                             st.markdown(f"> {source['content']}")
                             st.divider()
 
@@ -159,7 +210,8 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                 "use_rag": use_rag,
                 "top_k": top_k,
                 "temperature": temperature,
-                "max_tokens": max_tokens
+                "max_tokens": max_tokens,
+                "retrieval_method": retrieval_method if use_rag else None
             }
             
             # Show loading
@@ -168,14 +220,23 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                 response = requests.post(
                     f"{API_BASE_URL}/api/v1/chat",
                     json=request_data,
-                    timeout=60
+                    timeout=120
                 )
             
             if response.status_code == 200:
                 data = response.json()
                 
-                # Extract response
-                assistant_message = data["message"]["content"]
+                # Debug: Show raw response structure
+                # st.write("DEBUG - Response data:", data)
+                
+                # Extract response - handle different response structures
+                if "message" in data and isinstance(data["message"], dict):
+                    assistant_message = data["message"].get("content", "")
+                elif "response" in data:
+                    assistant_message = data["response"]
+                else:
+                    assistant_message = str(data.get("message", "No response generated"))
+                
                 sources = data.get("sources", [])
                 conversation_id = data.get("conversation_id")
                 
@@ -184,16 +245,50 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                     st.session_state.conversation_id = conversation_id
                 
                 # Display response
-                message_placeholder.markdown(assistant_message)
+                if assistant_message:
+                    message_placeholder.markdown(assistant_message)
+                else:
+                    message_placeholder.warning("⚠️ No response text generated. Check backend logs.")
                 
-                # Display sources
+                # Display sources with hybrid metadata
                 if sources:
                     with sources_placeholder.expander(f"📚 Sources ({len(sources)})"):
                         for idx, source in enumerate(sources, 1):
-                            st.markdown(f"**{idx}. {source['filename']}**")
-                            if source.get('page_number'):
-                                st.caption(f"Page {source['page_number']}")
-                            st.text(f"Score: {source['score']:.3f}")
+                            # Create columns for source display
+                            col1, col2 = st.columns([3, 1])
+                            
+                            with col1:
+                                st.markdown(f"**{idx}. {source['filename']}**")
+                                if source.get('page_number'):
+                                    st.caption(f"📄 Page {source['page_number']}")
+                            
+                            with col2:
+                                # Show retrieval method badge
+                                method = source.get('retrieval_method', 'unknown')
+                                if method == 'hybrid':
+                                    st.markdown("🔀 **Hybrid**")
+                                elif method == 'faiss':
+                                    st.markdown("🧠 **Semantic**")
+                                elif method == 'bm25':
+                                    st.markdown("🔤 **Keyword**")
+                            
+                            # Show scores
+                            score_text = f"**Overall Score:** {source['score']:.3f}"
+                            
+                            # Show individual scores for hybrid results
+                            if source.get('faiss_score') is not None or source.get('bm25_score') is not None:
+                                score_parts = []
+                                if source.get('faiss_score') is not None:
+                                    rank_text = f"#{source.get('faiss_rank', '?')}" if source.get('faiss_rank') else ""
+                                    score_parts.append(f"Semantic: {source['faiss_score']:.3f} {rank_text}")
+                                if source.get('bm25_score') is not None:
+                                    rank_text = f"#{source.get('bm25_rank', '?')}" if source.get('bm25_rank') else ""
+                                    score_parts.append(f"Keyword: {source['bm25_score']:.3f} {rank_text}")
+                                score_text += f" ({', '.join(score_parts)})"
+                            
+                            st.text(score_text)
+                            
+                            # Show content
                             st.markdown(f"> {source['content']}")
                             st.divider()
                 
@@ -205,11 +300,24 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                 })
                 
                 # Show metadata
-                metadata = data.get("metadata", {})
+                model = data.get("model", "unknown")
+                tokens = data.get("tokens_used", 0)
+                proc_time = data.get("processing_time", 0)
+                ret_method = data.get("retrieval_method", "unknown")
+                
+                # Format retrieval method display
+                method_icons = {
+                    "hybrid": "🔀",
+                    "faiss": "🧠",
+                    "bm25": "🔤"
+                }
+                method_icon = method_icons.get(ret_method, "🔍")
+                
                 st.caption(
-                    f"⏱️ {metadata.get('processing_time', 0):.2f}s | "
-                    f"🤖 {metadata.get('model', 'unknown')} | "
-                    f"📊 {metadata.get('tokens_used', 0)} tokens"
+                    f"⏱️ {proc_time:.2f}s | "
+                    f"🤖 {model} | "
+                    f"📊 {tokens} tokens | "
+                    f"{method_icon} {ret_method}"
                 )
                 
             else:
@@ -222,6 +330,14 @@ if prompt := st.chat_input("Ask a question about your documents..."):
         
         except requests.exceptions.ConnectionError:
             error_msg = "❌ Cannot connect to API. Make sure the backend is running."
+            message_placeholder.error(error_msg)
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": error_msg
+            })
+        
+        except requests.exceptions.Timeout:
+            error_msg = "⏱️ Request timed out. Try reducing max_tokens or using a faster model."
             message_placeholder.error(error_msg)
             st.session_state.messages.append({
                 "role": "assistant",
