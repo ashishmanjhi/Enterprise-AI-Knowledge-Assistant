@@ -361,8 +361,8 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                                 for eq in qm["expanded_queries"]:
                                     st.markdown(f"- {eq}")
                             if techniques.get("hyde") and qm.get("hyde_answer"):
-                                with st.expander("HyDE answer (used for semantic search)", expanded=False):
-                                    st.markdown(qm["hyde_answer"])
+                                st.markdown("**HyDE answer** *(used for semantic search)*")
+                                st.caption(qm["hyde_answer"])
                             st.caption(
                                 f"Query processing: {qm.get('processing_time', 0):.2f}s · "
                                 f"{qm.get('total_queries', 1)} total queries"
