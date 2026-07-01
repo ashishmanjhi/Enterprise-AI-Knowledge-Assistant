@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.core.settings import settings
 from backend.core.logging import logger
 from backend.core.tracing import setup_tracing, add_otel_middleware
-from backend.api.routes import health, status, documents, chat, admin, evaluate, memory, guardrails, agent, auth, feedback
+from backend.api.routes import health, status, documents, chat, admin, evaluate, memory, guardrails, agent, auth, feedback, multi_agent
 from backend.api.middleware.auth import JWTAuthMiddleware
 
 
@@ -65,6 +65,9 @@ def create_app() -> FastAPI:
 
     # Phase 10: Feedback collection
     app.include_router(feedback.router, tags=["feedback"])
+
+    # Phase 11: Multi-Agent Ecosystem
+    app.include_router(multi_agent.router, tags=["multi-agent"])
     
     # Phase 10: OpenTelemetry HTTP instrumentation (no-op when otel_enabled=False)
     add_otel_middleware(app)
@@ -108,6 +111,7 @@ def create_app() -> FastAPI:
                 "agent":       "/api/v1/agent",
                 "auth":        "/auth/token",
                 "feedback":    "/api/v1/feedback",
+                "multi_agent": "/api/v1/multi-agent",
             }
         }
     

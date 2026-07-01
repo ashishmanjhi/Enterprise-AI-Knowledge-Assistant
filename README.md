@@ -6,7 +6,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 
 ## Project Status
 
-**Current Phase: Phase 10 Complete — Production Readiness**
+**Current Phase: Phase 11 Complete — Multi-Agent Ecosystem**
 
 | Phase | Name | Status |
 |-------|------|--------|
@@ -23,7 +23,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 | 8 | User Experience | ✅ Complete |
 | 9 | Agentic RAG (LangGraph) | ✅ Complete |
 | 10 | Production Readiness | ✅ Complete |
-| 11 | Multi-Agent Ecosystem | ⬜ Planned |
+| 11 | Multi-Agent Ecosystem | ✅ Complete |
 | 12 | Knowledge Graph Enhancement | ⬜ Planned |
 
 ---
@@ -103,6 +103,16 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Safety Badges** — Guardrail warning indicators shown on each response
 - **Query Metadata Panel** — Shows techniques applied (HyDE, expansion, reranking) per query
 - **Filename Search Filter** — Filter documents by name in the Document Library tab
+
+#### Phase 11: Multi-Agent Ecosystem
+- **5 Specialised Sub-Agents** — Research, Retrieval, Knowledge, Evaluation, Governance — each a compiled LangGraph sub-graph
+- **Multi-Agent Orchestrator** — classifies query intent, routes to the right agent pipeline, then chains all five agents in sequence
+- **Research Agent** — decomposes complex questions into sub-questions, answers each independently, synthesises findings
+- **Retrieval Agent** — expands queries, runs parallel multi-strategy retrieval, deduplicates and re-ranks
+- **Knowledge Agent** — extracts named entities, runs targeted entity lookups, builds enriched knowledge context
+- **Evaluation Agent** — heuristic + optional RAGAS quality scoring on every answer
+- **Governance Agent** — final safety gate: guardrails + confidence + attribution checks
+- **Multi-Agent UI** — `🌐 Multi-Agent` Streamlit page with per-agent cards, quality metrics, entity panel, governance badge
 
 #### Phase 10: Production Readiness
 - **JWT Authentication** — `POST /auth/token` issues signed Bearer tokens; `JWTAuthMiddleware` enforces on all routes when `AUTH_ENABLED=true`
@@ -556,7 +566,7 @@ Set `AGENT_ENABLE_GROUNDING_CHECK=false` to disable (e.g. when Ollama is slow an
 - [x] **Phase 8**: User Experience
 - [x] **Phase 9**: Agentic RAG (LangGraph)
 - [x] **Phase 10**: Production Readiness (JWT auth, cloud providers, LangSmith, OTel, feedback)
-- [ ] **Phase 11**: Multi-Agent Ecosystem
+- [x] **Phase 11**: Multi-Agent Ecosystem (5 specialised agents + orchestrator)
 - [ ] **Phase 12**: Knowledge Graph Enhancement
 
 ---
@@ -574,6 +584,6 @@ Set `AGENT_ENABLE_GROUNDING_CHECK=false` to disable (e.g. when Ollama is slow an
 
 ---
 
-**Version**: 10.0.0
-**Status**: Phase 10 Complete ✅
+**Version**: 11.0.0
+**Status**: Phase 11 Complete ✅
 **Last Updated**: 2026-07-01

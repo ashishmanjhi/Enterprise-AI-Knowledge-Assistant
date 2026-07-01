@@ -153,6 +153,13 @@ class Settings(BaseSettings):
     # Feedback (Phase 10)
     feedback_store_path: str = "data/feedback.jsonl"     # append-only JSON-Lines file
 
+    # Multi-Agent Ecosystem (Phase 11)
+    research_agent_max_sub_questions: int   = 4      # max sub-questions the research agent generates
+    retrieval_agent_expansions:       int   = 3      # query expansions for the retrieval agent
+    eval_agent_pass_threshold:        float = 0.4    # composite score below this adds disclaimer
+    eval_agent_use_ragas:             bool  = False  # set True to run full RAGAS eval per answer
+    knowledge_agent_max_entities:     int   = 5      # max entities to look up per query
+
     # Logging
     log_level: str = "INFO"
     log_file: str = "logs/app.log"
