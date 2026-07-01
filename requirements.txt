@@ -28,6 +28,12 @@ sentencepiece==0.1.99
 PyPDF2==3.0.1
 python-docx==1.1.0
 
+# Enhanced PDF Extraction (Phase 13)
+pdfplumber>=0.10.0          # table-aware PDF extraction
+# Optional OCR dependencies — install manually when needed:
+# pip install pytesseract Pillow pdf2image
+# Also requires Tesseract binary: https://github.com/UB-Mannheim/tesseract/wiki
+
 # Embeddings & Vector Store (Phase 1)
 sentence-transformers==2.3.1
 faiss-cpu==1.7.4

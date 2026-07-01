@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     
     # Application
     app_name: str = "Enterprise Agentic RAG Platform"
-    app_version: str = "12.0.0"
+    app_version: str = "13.0.0"
     environment: Literal["development", "staging", "production"] = "development"
     debug: bool = True
     
@@ -159,6 +159,14 @@ class Settings(BaseSettings):
     eval_agent_pass_threshold:        float = 0.4    # composite score below this adds disclaimer
     eval_agent_use_ragas:             bool  = False  # set True to run full RAGAS eval per answer
     knowledge_agent_max_entities:     int   = 5      # max entities to look up per query
+
+    # Enhanced PDF Ingestion — Phase 13
+    pdf_use_enhanced_loader:   bool  = True    # use pdfplumber over PyPDF2 when available
+    pdf_table_format:          str   = "markdown"  # "markdown" | "csv"
+    pdf_ocr_fallback:          bool  = True    # OCR blank pages with pytesseract when available
+    pdf_ocr_min_text_len:      int   = 20      # chars below which a page is considered blank
+    pdf_table_chunk_prefix:    str   = "[TABLE]"   # prepended to table chunks for traceability
+    pdf_max_table_chunk_chars: int   = 2000    # large tables split above this char count
 
     # Knowledge Graph Enhancement (Phase 12)
     kg_persist_path:              str   = "data/knowledge_graph.json"  # JSON persistence file

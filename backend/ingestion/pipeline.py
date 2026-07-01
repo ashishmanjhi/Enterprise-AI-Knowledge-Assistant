@@ -1,12 +1,16 @@
 """
 Document ingestion pipeline.
 Orchestrates document loading, chunking, embedding, and indexing.
+
+Phase 13: uses EnhancedPDFLoader (pdfplumber) when available, which
+extracts tables as Markdown blocks alongside paragraph text and
+optionally runs OCR on blank pages.
 """
 
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 import time
-from backend.ingestion.loaders import PDFLoader, DOCXLoader, BaseDocumentLoader
+from backend.ingestion.loaders import PDFLoader, EnhancedPDFLoader, DOCXLoader, BaseDocumentLoader
 from backend.ingestion.chunking import DocumentChunker
 from backend.ingestion.metadata import (
     DocumentMetadata,
@@ -57,10 +61,20 @@ class IngestionPipeline:
         self.bm25_retriever = bm25_retriever or get_shared_bm25_retriever()
         self.chunker = chunker or DocumentChunker()
         
-        # Initialize loaders
+        # Initialize loaders — Phase 13: prefer EnhancedPDFLoader
+        pdf_loader: BaseDocumentLoader
+        if settings.pdf_use_enhanced_loader:
+            pdf_loader = EnhancedPDFLoader(
+                table_format=settings.pdf_table_format,
+                ocr_fallback=settings.pdf_ocr_fallback,
+                min_text_len=settings.pdf_ocr_min_text_len,
+            )
+        else:
+            pdf_loader = PDFLoader()
+
         self.loaders: Dict[str, BaseDocumentLoader] = {
-            ".pdf": PDFLoader(),
-            ".docx": DOCXLoader()
+            ".pdf": pdf_loader,
+            ".docx": DOCXLoader(),
         }
         
         self.metadata_manager = MetadataManager()
@@ -272,8 +286,8 @@ class IngestionPipeline:
             List of chunk dictionaries
         """
         content = document.get("content", "")
-        pages = document.get("pages", [])
-        
+        pages   = document.get("pages", [])
+
         # Chunk by pages if available, otherwise chunk full content
         if pages:
             chunks = self.chunker.chunk_pages(
@@ -285,6 +299,17 @@ class IngestionPipeline:
                 content,
                 metadata=self.metadata_manager.metadata_to_dict(doc_metadata)
             )
+
+        # Phase 13: tag table chunks for downstream traceability
+        prefix = settings.pdf_table_chunk_prefix
+        for chunk in chunks:
+            chunk_text = chunk.get("content", "")
+            if chunk_text.startswith("| ") or chunk_text.startswith("**Table:"):
+                chunk["chunk_type"] = "table"
+                if prefix and not chunk_text.startswith(prefix):
+                    chunk["content"] = f"{prefix} {chunk_text}"
+            else:
+                chunk.setdefault("chunk_type", "text")
         
         logger.info(f"Created {len(chunks)} chunks")
         
@@ -394,19 +419,30 @@ class IngestionPipeline:
     def get_stats(self) -> Dict[str, Any]:
         """
         Get pipeline statistics.
-        
+
         Returns:
             Dictionary with statistics
         """
+        pdf_loader = self.loaders.get(".pdf")
         return {
             "vector_store": self.vector_store.get_stats(),
             "bm25_retriever": self.bm25_retriever.get_stats(),
             "embedding_service": self.embedding_service.get_model_info(),
             "chunker": {
                 "chunk_size": self.chunker.chunk_size,
-                "chunk_overlap": self.chunker.chunk_overlap
+                "chunk_overlap": self.chunker.chunk_overlap,
             },
-            "supported_formats": list(self.loaders.keys())
+            "supported_formats": list(self.loaders.keys()),
+            "pdf_extraction": {
+                "backend": (
+                    "pdfplumber"
+                    if isinstance(pdf_loader, EnhancedPDFLoader)
+                    else "pypdf2"
+                ),
+                "table_support": isinstance(pdf_loader, EnhancedPDFLoader),
+                "ocr_fallback": settings.pdf_ocr_fallback,
+                "table_format": settings.pdf_table_format,
+            },
         }
 
 

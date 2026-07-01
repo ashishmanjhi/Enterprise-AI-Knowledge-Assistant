@@ -6,7 +6,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 
 ## Project Status
 
-**Current Phase: Phase 12 Complete — Knowledge Graph Enhancement**
+**Current Phase: Phase 13 Complete — Enhanced PDF Ingestion (Tables + OCR)**
 
 | Phase | Name | Status |
 |-------|------|--------|
@@ -25,12 +25,13 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 | 10 | Production Readiness | ✅ Complete |
 | 11 | Multi-Agent Ecosystem | ✅ Complete |
 | 12 | Knowledge Graph Enhancement | ✅ Complete |
+| 13 | Enhanced PDF Ingestion (Tables + OCR) | ✅ Complete |
 
 ---
 
 ## Features
 
-### Implemented (Phases 0–12)
+### Implemented (Phases 0–13)
 
 #### Phase 0–0.5: Foundation
 - **FastAPI Backend** with health checks and status monitoring
@@ -123,6 +124,15 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Knowledge Agent Upgrade** — Phase 12 replaces the Phase 11 regex baseline with the full KG pipeline (EntityExtractor + RelationMapper + GraphRetriever)
 - **KG REST API** — `POST /api/v1/kg/build`, `GET /kg/query`, `GET /kg/stats`, `GET /kg/entities`, `GET /kg/relations`, `DELETE /kg/clear`
 - **Knowledge Graph UI** — `🕸️ Knowledge Graph` Streamlit page with Build, Query, Entities, and Relations tabs
+
+#### Phase 13: Enhanced PDF Ingestion (Tables + OCR)
+- **EnhancedPDFLoader** — pdfplumber-based PDF loader; extracts paragraph text AND structured tables per page
+- **TableSerializer** — converts pdfplumber `list[list]` rows to Markdown (default) or CSV strings ready for chunking
+- **OCRProcessor** — pytesseract wrapper for scanned / image-only pages; gracefully degrades when not installed
+- **Table Chunks** — tables indexed as dedicated `[TABLE]` chunks with `chunk_type="table"` metadata for traceability
+- **Graceful Fallback** — if pdfplumber not installed → PyPDF2; if pytesseract not installed → blank pages → empty string; never crashes
+- **Pipeline Stats** — `GET /api/v1/documents/stats/overview` now returns `pdf_extraction` backend info
+- **Documents UI Update** — Statistics tab shows extraction backend, table support, and OCR status; Upload Tips updated
 
 #### Phase 10: Production Readiness
 - **JWT Authentication** — `POST /auth/token` issues signed Bearer tokens; `JWTAuthMiddleware` enforces on all routes when `AUTH_ENABLED=true`

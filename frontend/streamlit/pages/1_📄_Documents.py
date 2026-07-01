@@ -99,16 +99,22 @@ with tab1:
     elif upload_button and not uploaded_files:
         st.warning("⚠️ Please select files to upload")
     
-    # Upload tips
+    # Upload tips — Phase 13: describe enhanced extraction
     with st.expander("💡 Upload Tips"):
         st.markdown("""
         - **Supported formats**: PDF, DOCX
         - **Max file size**: 10 MB per file
         - **Processing**: Files are processed in the background
-        - **Chunking**: Documents are automatically split into chunks
+        - **Chunking**: Documents are automatically split into 1 000-character chunks
         - **Embedding**: Chunks are embedded using BAAI/bge-small-en-v1.5
-        - **Indexing**: Embedded chunks are indexed in FAISS for fast retrieval
+        - **Indexing**: Embeddings are indexed in FAISS + BM25 for hybrid retrieval
         """)
+        st.info(
+            "🆕 **Phase 13 — Enhanced PDF Extraction**  \n"
+            "Tables in PDF files are now extracted as Markdown tables and indexed "
+            "as dedicated **[TABLE]** chunks.  \n"
+            "Scanned / image-only pages are processed with OCR when pytesseract is installed."
+        )
 
 # Tab 2: Document Library
 with tab2:
@@ -196,6 +202,31 @@ with tab2:
 # Tab 3: Statistics
 with tab3:
     st.header("System Statistics")
+
+    # Phase 13: PDF extraction capability card
+    try:
+        stats_resp = requests.get(
+            f"{API_BASE_URL}/api/v1/documents/stats/overview", timeout=5
+        )
+        if stats_resp.status_code == 200:
+            pdf_info = stats_resp.json().get("pdf_extraction", {})
+            if pdf_info:
+                backend = pdf_info.get("backend", "pypdf2")
+                table_support = pdf_info.get("table_support", False)
+                ocr_fallback = pdf_info.get("ocr_fallback", False)
+
+                backend_label = "pdfplumber ✅" if backend == "pdfplumber" else "PyPDF2 (basic)"
+                table_label = "✅ Enabled" if table_support else "❌ Not available"
+                ocr_label = "✅ Enabled" if ocr_fallback else "⚠️ pytesseract not installed"
+
+                st.subheader("📑 PDF Extraction Engine (Phase 13)")
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Backend", backend_label)
+                c2.metric("Table extraction", table_label)
+                c3.metric("OCR fallback", ocr_label)
+                st.divider()
+    except Exception:
+        pass
     
     try:
         # Fetch statistics
@@ -306,25 +337,30 @@ with tab3:
 # Sidebar
 with st.sidebar:
     st.header("ℹ️ Information")
-    
+
     st.markdown("""
     ### Document Processing
-    
+
     When you upload a document:
     1. **Upload**: File is saved to storage
     2. **Processing**: Document is processed in background
-    3. **Chunking**: Text is split into chunks
-    4. **Embedding**: Chunks are embedded
-    5. **Indexing**: Embeddings are indexed in FAISS
-    
+    3. **Chunking**: Text is split into 1 000-char chunks
+    4. **Embedding**: Chunks are embedded (BGE-small)
+    5. **Indexing**: Embeddings → FAISS + BM25
+
+    ### Phase 13 Enhancements
+    - **Tables** extracted as Markdown, indexed as `[TABLE]` chunks
+    - **Scanned pages** processed via OCR fallback
+    - Extraction backend shown in Statistics tab
+
     ### Supported Formats
-    - PDF (.pdf)
+    - PDF (.pdf) — text + tables + OCR
     - Microsoft Word (.docx)
-    
+
     ### Tips
     - Upload multiple files at once
     - Processing happens in background
-    - Check Statistics tab for system info
+    - Check Statistics tab for extraction engine details
     """)
     
     st.divider()
