@@ -6,7 +6,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 
 ## Project Status
 
-**Current Phase: Phase 11 Complete — Multi-Agent Ecosystem**
+**Current Phase: Phase 12 Complete — Knowledge Graph Enhancement**
 
 | Phase | Name | Status |
 |-------|------|--------|
@@ -24,13 +24,13 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 | 9 | Agentic RAG (LangGraph) | ✅ Complete |
 | 10 | Production Readiness | ✅ Complete |
 | 11 | Multi-Agent Ecosystem | ✅ Complete |
-| 12 | Knowledge Graph Enhancement | ⬜ Planned |
+| 12 | Knowledge Graph Enhancement | ✅ Complete |
 
 ---
 
 ## Features
 
-### Implemented (Phases 0–9)
+### Implemented (Phases 0–12)
 
 #### Phase 0–0.5: Foundation
 - **FastAPI Backend** with health checks and status monitoring
@@ -113,6 +113,16 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Evaluation Agent** — heuristic + optional RAGAS quality scoring on every answer
 - **Governance Agent** — final safety gate: guardrails + confidence + attribution checks
 - **Multi-Agent UI** — `🌐 Multi-Agent` Streamlit page with per-agent cards, quality metrics, entity panel, governance badge
+
+#### Phase 12: Knowledge Graph Enhancement
+- **GraphStore** — NetworkX `MultiDiGraph` KG with entity nodes and relation edges, persisted as JSON (`data/knowledge_graph.json`)
+- **Entity Extractor** — LLM-first NER with typed labels (PERSON, ORG, PRODUCT, LOCATION, CONCEPT, TECHNICAL) + regex fallback
+- **Relation Mapper** — LLM extracts `subject | predicate | object` triples; heuristic regex fallback for `is / uses / has` patterns
+- **Graph Retriever** — entity substring search + ego-graph neighbour expansion with hop-distance scoring
+- **Hybrid Graph Retriever** — RRF fusion of FAISS+BM25 vector results and graph-aware results (configurable per-source weights)
+- **Knowledge Agent Upgrade** — Phase 12 replaces the Phase 11 regex baseline with the full KG pipeline (EntityExtractor + RelationMapper + GraphRetriever)
+- **KG REST API** — `POST /api/v1/kg/build`, `GET /kg/query`, `GET /kg/stats`, `GET /kg/entities`, `GET /kg/relations`, `DELETE /kg/clear`
+- **Knowledge Graph UI** — `🕸️ Knowledge Graph` Streamlit page with Build, Query, Entities, and Relations tabs
 
 #### Phase 10: Production Readiness
 - **JWT Authentication** — `POST /auth/token` issues signed Bearer tokens; `JWTAuthMiddleware` enforces on all routes when `AUTH_ENABLED=true`

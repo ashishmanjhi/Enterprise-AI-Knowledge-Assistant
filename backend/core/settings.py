@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     
     # Application
     app_name: str = "Enterprise Agentic RAG Platform"
-    app_version: str = "10.0.0"
+    app_version: str = "12.0.0"
     environment: Literal["development", "staging", "production"] = "development"
     debug: bool = True
     
@@ -159,6 +159,18 @@ class Settings(BaseSettings):
     eval_agent_pass_threshold:        float = 0.4    # composite score below this adds disclaimer
     eval_agent_use_ragas:             bool  = False  # set True to run full RAGAS eval per answer
     knowledge_agent_max_entities:     int   = 5      # max entities to look up per query
+
+    # Knowledge Graph Enhancement (Phase 12)
+    kg_persist_path:              str   = "data/knowledge_graph.json"  # JSON persistence file
+    kg_entity_types:              list[str] = ["PERSON", "ORG", "PRODUCT", "LOCATION", "CONCEPT", "TECHNICAL"]
+    kg_max_entities_per_doc:      int   = 50   # entity cap per document during KG build
+    kg_max_relations_per_doc:     int   = 30   # relation triple cap per document
+    kg_neighbour_hops:            int   = 2    # graph expansion hops for graph retrieval
+    kg_max_subgraph_nodes:        int   = 50   # max nodes returned in a subgraph query
+    kg_hybrid_vector_weight:      float = 0.6  # RRF weight for vector results in hybrid-graph fusion
+    kg_hybrid_graph_weight:       float = 0.4  # RRF weight for graph results in hybrid-graph fusion
+    kg_llm_extraction_enabled:    bool  = True # use LLM for entity/relation extraction (regex fallback when False)
+    kg_extraction_max_tokens:     int   = 300  # token budget for extraction prompts
 
     # Logging
     log_level: str = "INFO"

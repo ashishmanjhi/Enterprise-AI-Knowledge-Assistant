@@ -1,8 +1,8 @@
-# Phases 0–9 Implementation Summary
+# Phases 0–12 Implementation Summary
 
 ## 🎉 What We Built
 
-Successfully implemented the complete Enterprise Agentic RAG Platform covering all phases from foundation through agentic RAG:
+Successfully implemented the complete Enterprise Agentic RAG Platform covering all phases from foundation through knowledge graph enhancement:
 
 - **Phase 0** — Core Foundation
 - **Phase 0.25** — Local AI Infrastructure
@@ -16,6 +16,9 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 - **Phase 7** — Safety & Governance
 - **Phase 8** — User Experience
 - **Phase 9** — Agentic RAG (LangGraph)
+- **Phase 10** — Production Readiness
+- **Phase 11** — Multi-Agent Ecosystem
+- **Phase 12** — Knowledge Graph Enhancement
 
 ---
 
@@ -188,13 +191,77 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 
 ---
 
+### Production Readiness (Phase 10)
+
+#### 36. JWT Authentication ✅
+- **`backend/core/security.py`**: JWT helpers — `create_token()`, `verify_token()`
+- **`backend/api/middleware/auth.py`**: `JWTAuthMiddleware` — transparent when `auth_enabled=False`
+- **`backend/api/routes/auth.py`**: `POST /auth/token`
+
+#### 37. Cloud LLM Providers ✅
+- **`backend/providers/openai.py`**, `anthropic.py`, `gemini.py`, `azure.py` — fully implemented
+
+#### 38. LangSmith + OpenTelemetry Tracing ✅
+- **`backend/core/tracing.py`**: LangSmith project tracing + OTLP spans (no-op when disabled)
+
+#### 39. Feedback Collection ✅
+- **`backend/api/routes/feedback.py`**: `POST /api/v1/feedback` → append-only JSONL
+
+---
+
+### Multi-Agent Ecosystem (Phase 11)
+
+#### 40. Multi-Agent State ✅
+- **`backend/agents/multi/state.py`**: `MultiAgentState` TypedDict — shared across all sub-agents
+
+#### 41. Five Specialised Sub-Agents ✅
+- **Research Agent** — sub-question decomposition + synthesis
+- **Retrieval Agent** — query expansion + multi-strategy parallel retrieval
+- **Knowledge Agent** — entity extraction + context enrichment (upgraded in Phase 12)
+- **Evaluation Agent** — heuristic + optional RAGAS quality scoring
+- **Governance Agent** — safety gate (guardrails + confidence + attribution)
+
+#### 42. Multi-Agent Orchestrator ✅
+- **`backend/agents/multi/orchestrator.py`**: LangGraph router — intent classification → agent chain → final generation
+
+#### 43. Multi-Agent API + UI ✅
+- **`backend/api/routes/multi_agent.py`**: `POST /api/v1/multi-agent/chat`
+- **`frontend/streamlit/pages/5_🌐_Multi_Agent.py`**: Per-agent cards, quality metrics, entity panel, governance badge
+
+---
+
+### Knowledge Graph Enhancement (Phase 12)
+
+#### 44. GraphStore ✅
+- **`backend/knowledge_graph/graph_store.py`**: NetworkX `MultiDiGraph`, JSON persistence, entity/relation CRUD, subgraph queries
+
+#### 45. Entity Extractor ✅
+- **`backend/knowledge_graph/entity_extractor.py`**: LLM-first NER (PERSON/ORG/PRODUCT/LOCATION/CONCEPT/TECHNICAL) + regex fallback
+
+#### 46. Relation Mapper ✅
+- **`backend/knowledge_graph/relation_mapper.py`**: LLM triple extraction (`subject | predicate | object`) + heuristic fallback
+
+#### 47. Graph Retriever ✅
+- **`backend/knowledge_graph/graph_retriever.py`**: Entity search + ego-graph neighbour expansion with hop-distance scoring
+
+#### 48. Hybrid Graph Retriever ✅
+- **`backend/knowledge_graph/hybrid_graph_retriever.py`**: Weighted RRF fusion of vector + graph results
+
+#### 49. Knowledge Graph API ✅
+- **`backend/api/routes/knowledge_graph.py`**: Build, query, stats, entities, relations, clear endpoints
+
+#### 50. Knowledge Graph UI ✅
+- **`frontend/streamlit/pages/6_🕸️_Knowledge_Graph.py`**: Build, Query, Entities, Relations tabs with live stats sidebar
+
+---
+
 ## 📊 Statistics
 
 ### Code Files Created/Modified
-- **Backend**: 30+ Python files across 9 modules
-- **Frontend**: 5 Streamlit pages/components
+- **Backend**: 45+ Python files across 12 modules
+- **Frontend**: 6 Streamlit pages/components
 - **Configuration**: 6 files
-- **Documentation**: 10+ markdown files
+- **Documentation**: 12+ markdown files
 
 ### API Endpoints Live
 - 5 document operations
@@ -204,7 +271,9 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 - 2 evaluation operations
 - 3 guardrails operations
 - 4 admin/health operations
-- **Total: 23 endpoints**
+- 2 multi-agent operations
+- 6 knowledge graph operations
+- **Total: 31 endpoints**
 
 ### Lines of Code (approximate)
 - **Backend Core + Providers**: ~1,200 lines
@@ -212,10 +281,11 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 - **RAG Chain + Query Understanding**: ~800 lines
 - **Guardrails**: ~600 lines
 - **Memory**: ~400 lines
-- **Agents (LangGraph)**: ~700 lines
-- **Frontend (Streamlit)**: ~1,200 lines
-- **Documentation**: ~5,000 lines
-- **Total**: ~7,000+ lines
+- **Agents (LangGraph)**: ~1,200 lines
+- **Knowledge Graph**: ~900 lines
+- **Frontend (Streamlit)**: ~1,600 lines
+- **Documentation**: ~6,000 lines
+- **Total**: ~9,700+ lines
 
 ---
 
@@ -274,6 +344,29 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 - [x] Grounding verification post-generation
 - [x] Agentic Chat UI with trace visibility
 
+### Phase 10: Production Readiness ✅
+- [x] JWT auth middleware with transparent pass-through
+- [x] Cloud LLM providers (OpenAI, Anthropic, Gemini, Azure)
+- [x] LangSmith tracing for all agent runs
+- [x] OpenTelemetry spans for observability
+- [x] User feedback collection (JSONL)
+
+### Phase 11: Multi-Agent Ecosystem ✅
+- [x] 5 specialised sub-agents (Research, Retrieval, Knowledge, Evaluation, Governance)
+- [x] Multi-agent orchestrator with intent classification
+- [x] Shared `MultiAgentState` TypedDict
+- [x] Multi-Agent Streamlit UI
+
+### Phase 12: Knowledge Graph Enhancement ✅
+- [x] NetworkX GraphStore with JSON persistence
+- [x] LLM + regex Entity Extractor (6 entity types)
+- [x] LLM + heuristic Relation Mapper (triple extraction)
+- [x] Graph Retriever with neighbour expansion
+- [x] Hybrid Graph Retriever (RRF fusion of vector + graph)
+- [x] KnowledgeAgent upgraded to full KG pipeline
+- [x] 6 Knowledge Graph REST endpoints
+- [x] Knowledge Graph Explorer Streamlit UI
+
 ---
 
 ## 🏗️ Architecture Highlights
@@ -282,44 +375,25 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 
 1. **Abstract Factory**: LLM provider creation
 2. **Strategy Pattern**: Provider and retrieval method selection
-3. **Singleton**: Settings, logger, shared BM25 and vector store instances
+3. **Singleton**: Settings, logger, shared BM25 / vector store / GraphStore instances
 4. **Dependency Injection**: Node dependencies via `functools.partial`
 5. **State Machine**: LangGraph directed graph for agentic workflow
 6. **Pipeline**: Linear RAGChain for standard chat; graph for agentic chat
+7. **Graph Database**: NetworkX MultiDiGraph for entity–relation knowledge
 
 ### Key Architectural Decisions
 
 1. **Provider Abstraction**: Never directly call provider SDKs — always go through `LLMService`
 2. **Local-First**: Ollama for development, cloud providers activated in Phase 10
-3. **Fallback Mechanism**: Automatic provider switching on failure
+3. **Fallback Mechanism**: Automatic provider switching on failure; regex fallback for LLM extraction
 4. **Dual Pipeline**: Linear `RAGChain` for low-latency chat; `AgentGraph` for adaptive accuracy
 5. **Configuration-Driven**: Every behaviour toggle via environment variables
 6. **Modular Design**: Each phase's code is isolated and independently testable
-
----
-
-## 📈 What's Next
-
-### Phase 10 — Production Readiness
-- JWT / OAuth2 authentication middleware
-- Cloud provider activation (OpenAI, Anthropic, Gemini, Azure)
-- LangSmith tracing for LangGraph runs
-- OpenTelemetry spans for observability
-- Production Podman compose (secrets, health checks, reverse proxy)
-- User feedback collection endpoint
-
-### Phase 11 — Multi-Agent Ecosystem
-- Specialised sub-agents: Research, Retrieval, Evaluation, Governance, Knowledge
-- Inter-agent communication via shared state
-
-### Phase 12 — Knowledge Graph Enhancement
-- Entity extraction (NER)
-- Relationship mapping and graph store
-- Hybrid graph + vector retrieval
+7. **Pure-Python KG**: NetworkX + JSON persistence — no external graph DB required
 
 ---
 
 **Implementation Date**: 2026-07-01
-**Version**: 9.0.0
-**Status**: Phases 0–9 Complete ✅
-**Next Phase**: Phase 10 — Production Readiness
+**Version**: 12.0.0
+**Status**: Phases 0–12 Complete ✅
+**Platform**: Enterprise Agentic RAG Platform

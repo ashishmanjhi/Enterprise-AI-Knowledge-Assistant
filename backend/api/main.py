@@ -8,6 +8,7 @@ from backend.core.settings import settings
 from backend.core.logging import logger
 from backend.core.tracing import setup_tracing, add_otel_middleware
 from backend.api.routes import health, status, documents, chat, admin, evaluate, memory, guardrails, agent, auth, feedback, multi_agent
+from backend.api.routes.knowledge_graph import router as kg_router
 from backend.api.middleware.auth import JWTAuthMiddleware
 
 
@@ -68,6 +69,9 @@ def create_app() -> FastAPI:
 
     # Phase 11: Multi-Agent Ecosystem
     app.include_router(multi_agent.router, tags=["multi-agent"])
+
+    # Phase 12: Knowledge Graph Enhancement
+    app.include_router(kg_router, tags=["knowledge-graph"])
     
     # Phase 10: OpenTelemetry HTTP instrumentation (no-op when otel_enabled=False)
     add_otel_middleware(app)
@@ -111,7 +115,8 @@ def create_app() -> FastAPI:
                 "agent":       "/api/v1/agent",
                 "auth":        "/auth/token",
                 "feedback":    "/api/v1/feedback",
-                "multi_agent": "/api/v1/multi-agent",
+                "multi_agent":      "/api/v1/multi-agent",
+                "knowledge_graph":  "/api/v1/kg",
             }
         }
     

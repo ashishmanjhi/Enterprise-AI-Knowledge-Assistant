@@ -46,6 +46,7 @@ from backend.agents.multi.knowledge_agent import KnowledgeAgent
 from backend.core.settings import settings
 from backend.core.logging import get_logger
 from backend.core.tracing import trace_span, langsmith_callbacks
+from backend.knowledge_graph.graph_store import get_graph_store
 
 logger = get_logger(__name__)
 
@@ -236,7 +237,7 @@ class MultiAgentOrchestrator:
         self._retrieval  = RetrievalAgent(llm, retriever, reranker)
         self._evaluation = EvaluationAgent(llm)
         self._governance = GovernanceAgent()
-        self._knowledge  = KnowledgeAgent(llm, retriever)
+        self._knowledge  = KnowledgeAgent(llm, retriever, graph_store=get_graph_store())
 
         self._graph = self._build()
         logger.info("MultiAgentOrchestrator compiled")
