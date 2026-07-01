@@ -6,7 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.core.settings import settings
 from backend.core.logging import logger
-from backend.api.routes import health, status, documents, chat, admin, evaluate, memory, guardrails, agent, auth
+from backend.core.tracing import setup_tracing, add_otel_middleware
+from backend.api.routes import health, status, documents, chat, admin, evaluate, memory, guardrails, agent, auth, feedback
 from backend.api.middleware.auth import JWTAuthMiddleware
 
 
@@ -61,10 +62,17 @@ def create_app() -> FastAPI:
 
     # Phase 10: Auth endpoints (always registered; enforced only when auth_enabled=True)
     app.include_router(auth.router, tags=["auth"])
+
+    # Phase 10: Feedback collection
+    app.include_router(feedback.router, tags=["feedback"])
     
+    # Phase 10: OpenTelemetry HTTP instrumentation (no-op when otel_enabled=False)
+    add_otel_middleware(app)
+
     @app.on_event("startup")
     async def startup_event():
         """Application startup event handler."""
+        setup_tracing()  # Phase 10: initialise LangSmith + OTel
         logger.info(f"Starting {settings.app_name} v{settings.app_version}")
         logger.info(f"Environment: {settings.environment}")
         logger.info(f"Debug mode: {settings.debug}")
@@ -99,6 +107,7 @@ def create_app() -> FastAPI:
                 "guardrails":  "/api/v1/guardrails",
                 "agent":       "/api/v1/agent",
                 "auth":        "/auth/token",
+                "feedback":    "/api/v1/feedback",
             }
         }
     

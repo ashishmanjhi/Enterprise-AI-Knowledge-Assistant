@@ -1,0 +1,169 @@
+version: '3.8'
+
+# ── Production Podman Compose ────────────────────────────────────────────
+# Usage:
+#   podman-compose -f podman-compose.prod.yml up -d
+#
+# Prerequisites:
+#   1. Copy .env.example → .env and fill in all secrets.
+#   2. Build the backend image:
+#        podman build -t rag-backend:latest .
+#   3. Ensure a TLS certificate is available for Caddy (or use its
+#      automatic ACME flow by setting CADDY_DOMAIN in .env).
+# ─────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────
+  postgres:
+    image: docker.io/library/postgres:16-alpine
+    container_name: rag_postgres_prod
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-rag_platform}
+      POSTGRES_USER:     ${DB_USER:-rag_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}           # required — set in .env
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8'
+    expose:
+      - '5432'                                    # internal only — not published
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-rag_user} -d ${DB_NAME:-rag_platform}']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    networks:
+      - rag_internal
+
+  # ── Redis ───────────────────────────────────────────────────────────────
+  redis:
+    image: docker.io/library/redis:7-alpine
+    container_name: rag_redis_prod
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-changeme}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    expose:
+      - '6379'                                    # internal only
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-changeme}', 'ping']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+    networks:
+      - rag_internal
+
+  # ── FastAPI Backend ─────────────────────────────────────────────────────
+  backend:
+    image: rag-backend:latest
+    container_name: rag_backend_prod
+    command: >
+      uvicorn backend.api.main:app
+      --host 0.0.0.0
+      --port 8000
+      --workers 2
+      --log-level info
+    env_file: ../../.env
+    environment:
+      # Override any dev-mode settings for production
+      ENVIRONMENT:       production
+      DEBUG:             false
+      DB_HOST:           postgres
+      REDIS_HOST:        redis
+    expose:
+      - '8000'                                    # exposed to Caddy, not to host
+    volumes:
+      - rag_data:/app/data
+      - rag_logs:/app/logs
+      - rag_models:/app/models
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:8000/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+    networks:
+      - rag_internal
+      - rag_external
+
+  # ── Caddy Reverse Proxy (TLS termination) ───────────────────────────────
+  caddy:
+    image: docker.io/library/caddy:2-alpine
+    container_name: rag_caddy_prod
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:80/health || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+    networks:
+      - rag_external
+      - rag_internal
+
+# ── Volumes ─────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rag_data:
+    driver: local
+  rag_logs:
+    driver: local
+  rag_models:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+# ── Networks ─────────────────────────────────────────────────────────────
+networks:
+  rag_internal:
+    driver: bridge
+    internal: true                                # backend/db never reach the internet
+  rag_external:
+    driver: bridge                                # Caddy + backend can reach internet
+
+# Made with Bob

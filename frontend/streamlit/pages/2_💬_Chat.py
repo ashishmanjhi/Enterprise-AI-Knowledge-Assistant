@@ -508,6 +508,37 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                         f"{micon} {ret_m}{rerank_badge}{guard_badge}"
                     )
 
+                    # Feedback widget (Phase 10)
+                    fb_col1, fb_col2, _ = st.columns([1, 1, 8])
+                    with fb_col1:
+                        if st.button("👍", key=f"up_{len(st.session_state.messages)}", help="Good answer"):
+                            try:
+                                requests.post(f"{API_BASE_URL}/api/v1/feedback", json={
+                                    "conversation_id": conversation_id,
+                                    "message": prompt,
+                                    "answer": answer,
+                                    "rating": "up",
+                                    "pipeline": "rag",
+                                    "retrieval_method": ret_m,
+                                }, timeout=5)
+                                st.toast("Thanks for the feedback! 👍")
+                            except Exception:
+                                pass
+                    with fb_col2:
+                        if st.button("👎", key=f"dn_{len(st.session_state.messages)}", help="Poor answer"):
+                            try:
+                                requests.post(f"{API_BASE_URL}/api/v1/feedback", json={
+                                    "conversation_id": conversation_id,
+                                    "message": prompt,
+                                    "answer": answer,
+                                    "rating": "down",
+                                    "pipeline": "rag",
+                                    "retrieval_method": ret_m,
+                                }, timeout=5)
+                                st.toast("Thanks for the feedback! 👎")
+                            except Exception:
+                                pass
+
                     st.session_state.messages.append({
                         "role":               "assistant",
                         "content":            answer,

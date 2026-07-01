@@ -8,6 +8,7 @@ import os
 import httpx
 from backend.core.settings import settings
 from backend.core.logging import get_logger
+from backend.core.tracing import trace_span
 
 logger = get_logger(__name__)
 
@@ -73,12 +74,18 @@ class LLMService:
         Returns:
             Dictionary with generated text and metadata
         """
-        if self.provider == 'ollama':
-            return await self._generate_ollama(prompt, temperature, max_tokens, system_message)
-        elif self.provider == 'openai':
-            return await self._generate_openai(prompt, temperature, max_tokens, system_message)
-        else:
-            raise ValueError(f"Unsupported provider: {self.provider}")
+        async with trace_span("llm.generate", {
+            "provider": self.provider,
+            "model":    self.model,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }):
+            if self.provider == 'ollama':
+                return await self._generate_ollama(prompt, temperature, max_tokens, system_message)
+            elif self.provider == 'openai':
+                return await self._generate_openai(prompt, temperature, max_tokens, system_message)
+            else:
+                raise ValueError(f"Unsupported provider: {self.provider}")
     
     async def _generate_ollama(
         self,

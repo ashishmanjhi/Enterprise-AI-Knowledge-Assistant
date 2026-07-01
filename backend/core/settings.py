@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     
     # Application
     app_name: str = "Enterprise Agentic RAG Platform"
-    app_version: str = "0.1.0"
+    app_version: str = "10.0.0"
     environment: Literal["development", "staging", "production"] = "development"
     debug: bool = True
     
@@ -139,6 +139,19 @@ class Settings(BaseSettings):
     azure_openai_endpoint:     str = ""
     azure_openai_deployment:   str = ""
     azure_openai_api_version:  str = "2024-02-01"
+
+    # LangSmith tracing (Phase 10)
+    langsmith_enabled:  bool = False
+    langsmith_api_key:  str  = ""
+    langsmith_project:  str  = "enterprise-rag-platform"
+
+    # OpenTelemetry (Phase 10)
+    otel_enabled:       bool = False
+    otel_endpoint:      str  = "http://localhost:4317"   # OTLP gRPC collector
+    otel_service_name:  str  = "enterprise-rag-platform"
+
+    # Feedback (Phase 10)
+    feedback_store_path: str = "data/feedback.jsonl"     # append-only JSON-Lines file
 
     # Logging
     log_level: str = "INFO"

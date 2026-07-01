@@ -1,0 +1,65 @@
+# Caddy reverse-proxy config for production deployment
+# Place this file at deploy/podman/caddy/Caddyfile
+#
+# Replace {$CADDY_DOMAIN} with your actual domain, e.g.:
+#   CADDY_DOMAIN=rag.example.com
+#
+# Caddy automatically obtains and renews TLS certificates via ACME/Let's Encrypt
+# when a real domain is used.  For local testing use ":443" or "localhost".
+
+{$CADDY_DOMAIN:localhost} {
+
+    # ── Backend API (FastAPI) ─────────────────────────────────────────────
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    handle /auth/* {
+        reverse_proxy backend:8000
+    }
+
+    handle /health* {
+        reverse_proxy backend:8000
+    }
+
+    handle /readyz {
+        reverse_proxy backend:8000
+    }
+
+    handle /healthz {
+        reverse_proxy backend:8000
+    }
+
+    handle /docs {
+        reverse_proxy backend:8000
+    }
+
+    handle /openapi.json {
+        reverse_proxy backend:8000
+    }
+
+    handle /redoc {
+        reverse_proxy backend:8000
+    }
+
+    # ── Root ──────────────────────────────────────────────────────────────
+    handle / {
+        reverse_proxy backend:8000
+    }
+
+    # ── Security headers ──────────────────────────────────────────────────
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options    nosniff
+        X-Frame-Options           SAMEORIGIN
+        Referrer-Policy           strict-origin-when-cross-origin
+        -Server
+    }
+
+    # ── Logging ───────────────────────────────────────────────────────────
+    log {
+        output stdout
+        format json
+        level  INFO
+    }
+}

@@ -51,6 +51,7 @@ from backend.agents.state import AgentState
 from backend.agents import nodes
 from backend.core.settings import settings
 from backend.core.logging import get_logger
+from backend.core.tracing import trace_span, langsmith_callbacks
 
 logger = get_logger(__name__)
 
@@ -168,8 +169,16 @@ class AgentGraph:
             Optional keys: ``top_k``, ``temperature``, ``max_tokens``,
             ``retrieval_method``, ``use_reranking``, ``conversation_history``.
         """
-        logger.info(f"AgentGraph.run: query='{initial_state.get('query', '')[:80]}'")
-        final_state: AgentState = await self._graph.ainvoke(initial_state)  # type: ignore[assignment]
+        query = initial_state.get("query", "")
+        logger.info(f"AgentGraph.run: query='{query[:80]}'")
+        async with trace_span("agent.run", {"query": query[:120]}):
+            config: Dict[str, Any] = {}
+            cbs = langsmith_callbacks()
+            if cbs:
+                config["callbacks"] = cbs
+            final_state: AgentState = await self._graph.ainvoke(  # type: ignore[assignment]
+                initial_state, config=config or None
+            )
         return final_state
 
 
