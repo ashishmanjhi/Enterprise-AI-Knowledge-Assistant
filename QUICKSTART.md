@@ -6,23 +6,22 @@ Get the Enterprise Agentic RAG Platform running in 5 minutes!
 
 Before starting, ensure you have:
 
-- ✅ Python 3.9+ installed
+- ✅ Python 3.12+ installed
 - ✅ Ollama installed and running
-- ✅ 8 GB RAM minimum (16 GB recommended)
+- ✅ 16 GB RAM minimum (32 GB recommended for llava:7b)
+- ✅ Windows 10/11, Linux, or macOS
 
 ## Step-by-Step Setup
 
 ### 1. Install Dependencies (2 minutes)
 
-```bash
-# Create and activate virtual environment
+```powershell
+# Create and activate virtual environment (Windows)
 python -m venv venv
-
-# Windows
 venv\Scripts\activate
 
 # Linux/Mac
-source venv/bin/activate
+# source venv/bin/activate
 
 # Install packages
 pip install -r requirements.txt
@@ -30,9 +29,9 @@ pip install -r requirements.txt
 
 ### 2. Configure Environment (30 seconds)
 
-```bash
+```powershell
 # Copy environment template
-cp .env.example .env
+copy .env.example .env
 
 # Default values work for local development
 # Edit .env only if you need custom settings
@@ -40,31 +39,35 @@ cp .env.example .env
 
 ### 3. Start Services (1 minute)
 
-```bash
+```powershell
 # Start PostgreSQL and Redis (optional but recommended)
-cd deploy/podman
+cd deploy\podman
 podman-compose up -d
 
 # Check status
 podman-compose ps
 ```
 
-> **Note:** Redis is optional. Without it, conversation memory falls back to in-process storage (no persistence across restarts).
+> **Note:** Redis is optional. Without it, conversation memory falls back to in-process storage (no persistence across restarts). See `TROUBLESHOOTING.md` for alternatives.
 
-### 4. Verify Ollama (30 seconds)
+### 4. Verify Ollama Models (30 seconds)
 
-```bash
-# Check Ollama is running
+```powershell
+# Check which models are installed
 ollama list
 
-# Should show: qwen3:4b, gemma3:4b, or similar
-# If not, pull a model:
-ollama pull qwen3:4b
+# Pull required models if missing:
+ollama pull qwen3:4b       # primary LLM (required)
+ollama pull llava:7b       # vision model for chart descriptions (Phase 14)
+
+# Optional models:
+ollama pull gemma3:4b      # secondary LLM
+ollama pull phi4-mini      # lightweight testing
 ```
 
 ### 5. Start Backend (30 seconds)
 
-```bash
+```powershell
 # From project root
 uvicorn backend.api.main:app --reload
 ```
@@ -73,115 +76,204 @@ Open http://localhost:8000/docs to see the full API documentation.
 
 ### 6. Start Frontend (30 seconds)
 
-```bash
+```powershell
 # In a new terminal, from project root
 streamlit run frontend/streamlit/app.py
 ```
 
 Open http://localhost:8501 to access the UI.
 
+---
+
 ## Verify Everything Works
 
 ### Check Backend Health
 
-```bash
+```powershell
 curl http://localhost:8000/health
-# Should return: {"status":"healthy","service":"rag-platform"}
+# Returns: {"status":"healthy","service":"rag-platform"}
 ```
 
 ### Check Service Status
 
-```bash
+```powershell
 curl http://localhost:8000/api/v1/status
-# Should show all services as "connected"
+# Shows all services as "connected"
 ```
 
 ### Check Agent Health
 
-```bash
+```powershell
 curl http://localhost:8000/api/v1/agent/health
-# Should return: {"status":"healthy","graph":"compiled",...}
+# Returns: {"status":"healthy","graph":"compiled",...}
+```
+
+### Check Knowledge Graph
+
+```powershell
+curl http://localhost:8000/api/v1/kg/stats
+# Returns: {"nodes":0,"edges":0,...}
 ```
 
 ### Check Frontend
 
 1. Open http://localhost:8501
 2. Sidebar should show "✅ Backend Connected"
-3. All services (PostgreSQL, Redis, Ollama) should show green checkmarks
-4. Four pages available: 📄 Documents, 💬 Chat, 🤖 Agent, 📊 Evaluate
+3. Six pages available in the sidebar:
+   - 📄 Documents
+   - 💬 Chat
+   - 📊 Evaluate
+   - 🤖 Agent
+   - 🌐 Multi Agent
+   - 🕸️ Knowledge Graph
+
+---
+
+## First Use Walkthrough
+
+### Step 1: Upload a Document
+
+1. Go to **📄 Documents** page
+2. Click **Browse files** and select a PDF or DOCX file
+3. Click **🚀 Upload**
+4. Wait for processing (~10–30 seconds depending on document size)
+5. Check **Statistics** tab — the **PDF Extraction Engine** card shows:
+   - Backend: `pdfplumber ✅`
+   - Table extraction: `✅ Enabled`
+   - Chart / image AI: `✅ llava:7b`
+
+> **Phase 13 + 14 note**: Tables are automatically extracted as `[TABLE]` chunks. Charts and diagrams are described by llava:7b as `[CHART]` chunks. Both are fully searchable.
+
+### Step 2: Chat with RAG
+
+1. Go to **💬 Chat** page
+2. Enter a session ID (or leave default)
+3. Type a question about your uploaded document
+4. Enable **Hybrid retrieval**, **Query expansion**, and **HyDE** for best results
+
+### Step 3: Try Agentic Mode
+
+1. Go to **🤖 Agent** page
+2. Ask a complex, multi-step question
+3. Watch the LangGraph trace: `route → retrieve → grade → generate → ground`
+
+### Step 4: Explore Multi-Agent
+
+1. Go to **🌐 Multi Agent** page
+2. Ask a research-style question (e.g. "Summarise the key findings and evaluate quality")
+3. See 5 agents working: Research → Retrieval → Knowledge → Evaluation → Governance
+
+### Step 5: Build Knowledge Graph
+
+1. Go to **🕸️ Knowledge Graph** page
+2. Click **Build KG** with a query to extract entities and relations
+3. Browse entities and relations in the Explorer tabs
+
+---
 
 ## Common Issues
 
 ### Port Already in Use
 
-```bash
-# Check what's using the port
-netstat -an | findstr "8000 8501 5432 6379"  # Windows
-lsof -i :8000 -i :8501 -i :5432 -i :6379    # Linux/Mac
-
-# Kill the process or use different ports in .env
+```powershell
+netstat -ano | findstr "8000 8501 5432 6379"
+taskkill /PID <PID> /F
 ```
 
-### Podman Services Won't Start
+### Ollama Not Responding
 
-```bash
-# Check Podman is running
-podman info
+```powershell
+# Check Ollama is running
+ollama list
 
-# Restart services
-cd deploy/podman
-podman-compose down
-podman-compose up -d
+# Restart Ollama service if needed
+# Windows: restart from system tray or:
+# taskkill /IM "ollama.exe" /F && ollama serve
+```
+
+### llava:7b Not Installed (Chart descriptions disabled)
+
+```powershell
+# Install llava for chart/image understanding
+ollama pull llava:7b
+
+# Or disable chart descriptions entirely in .env:
+# PDF_CHART_DESCRIPTION_ENABLED=false
 ```
 
 ### Import Errors
 
-```bash
+```powershell
 # Make sure virtual environment is activated
+venv\Scripts\activate
+
 # Reinstall dependencies
 pip install -r requirements.txt --force-reinstall
 ```
 
-### Agent Responses Are Slow
+### Agent / Multi-Agent Responses Are Slow
 
-The agent runs 3–6 LLM calls per query (routing, optional rewrite, grading, generation, grounding). On CPU-only Ollama this can take 2–5 minutes. Speed up with:
+The agent runs 3–6 LLM calls per query on CPU-only Ollama. Speed up with:
 
-```bash
-# Disable document grading and grounding check (faster, less accurate)
+```env
 # Add to .env:
 AGENT_ENABLE_DOCUMENT_GRADING=false
 AGENT_ENABLE_GROUNDING_CHECK=false
 AGENT_MAX_REWRITES=0
 ```
 
+### Chart Descriptions Slow Ingestion
+
+llava:7b takes ~5–15 s per image on CPU. For bulk ingestion:
+
+```env
+# Disable during batch upload, re-enable afterwards:
+PDF_CHART_DESCRIPTION_ENABLED=false
+```
+
+### pdfplumber Table Extraction Issues
+
+```env
+# Fall back to PyPDF2 (no table support):
+PDF_USE_ENHANCED_LOADER=false
+```
+
+---
+
 ## Next Steps
 
-Now that everything is running:
-
-1. ✅ **Upload documents** via the 📄 Documents page
-2. ✅ **Chat with RAG** via the 💬 Chat page (streaming, memory, guardrails)
-3. ✅ **Try agentic mode** via the 🤖 Agent page (LangGraph routing, grading, grounding)
-4. ✅ **Evaluate quality** via the 📊 Evaluate page (RAGAS metrics)
-5. ✅ Explore the full API at http://localhost:8000/docs
+1. ✅ **Upload documents** via 📄 Documents — tables and charts auto-extracted
+2. ✅ **Chat with RAG** via 💬 Chat — streaming, memory, safety guardrails
+3. ✅ **Agentic mode** via 🤖 Agent — LangGraph adaptive retrieval
+4. ✅ **Multi-agent** via 🌐 Multi Agent — 5-agent ensemble
+5. ✅ **Knowledge Graph** via 🕸️ Knowledge Graph — entity/relation explorer
+6. ✅ **Evaluate quality** via 📊 Evaluate — RAGAS metrics
+7. ✅ Explore full API at http://localhost:8000/docs
 
 ## Stopping Services
 
-```bash
+```powershell
 # Stop backend: Ctrl+C in terminal
 # Stop frontend: Ctrl+C in terminal
 
 # Stop Podman services
-cd deploy/podman
+cd deploy\podman
 podman-compose down
 ```
 
 ## Getting Help
 
 - 📚 [Full Documentation](README.md)
+- 🔧 [Troubleshooting Guide](TROUBLESHOOTING.md)
+- 📖 [Phase 14 Chart AI Guide](docs/PHASE_14_IMPLEMENTATION.md)
+- 📖 [Phase 13 Table Extraction Guide](docs/PHASE_13_IMPLEMENTATION.md)
+- 📖 [Phase 12 Knowledge Graph Guide](docs/PHASE_12_IMPLEMENTATION.md)
 - 🤖 [Phase 9 Agentic RAG Guide](docs/PHASE_9_IMPLEMENTATION.md)
-- 🗺️ [Project Roadmap](docs/project-roadmap.md)
 
 ---
 
-**Estimated Setup Time**: 5 minutes
-**Status**: Phase 9 Complete ✅ — Phases 0–9 all live
+**Estimated Setup Time**: 5–10 minutes
+**Version**: 14.0.0
+**Status**: Phases 0–14 Complete ✅
+
+# Made with Bob

@@ -1,8 +1,8 @@
-# Phases 0–12 Implementation Summary
+# Phases 0–14 Implementation Summary
 
 ## 🎉 What We Built
 
-Successfully implemented the complete Enterprise Agentic RAG Platform covering all phases from foundation through knowledge graph enhancement:
+Successfully implemented the complete Enterprise Agentic RAG Platform covering all 14 phases from foundation through multi-modal PDF understanding:
 
 - **Phase 0** — Core Foundation
 - **Phase 0.25** — Local AI Infrastructure
@@ -19,6 +19,8 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 - **Phase 10** — Production Readiness
 - **Phase 11** — Multi-Agent Ecosystem
 - **Phase 12** — Knowledge Graph Enhancement
+- **Phase 13** — Enhanced PDF Ingestion (Tables + OCR)
+- **Phase 14** — Chart & Image Understanding (llava Multi-Modal)
 
 ---
 
@@ -33,8 +35,8 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 
 #### 2. Configuration Management ✅
 - **`backend/core/settings.py`**: Pydantic-based settings with environment variable support
-- **`.env.example`**: Template for environment configuration
-- Support for all 9 phases' settings, environment-driven
+- **`.env.example`**: Template for environment configuration covering all 14 phases
+- Support for all phases' settings, environment-driven
 
 #### 3. Logging System ✅
 - **`backend/core/logging.py`**: Structured logging with rotation
@@ -47,7 +49,7 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 
 #### 4. API Application ✅
 - **`backend/api/main.py`**: FastAPI application with CORS middleware
-- 9 route modules registered, interactive Swagger UI at `/docs`
+- 11 route modules registered, interactive Swagger UI at `/docs`
 
 #### 5. Health & Status Endpoints ✅
 - `/health`, `/healthz`, `/readyz` — Basic, Kubernetes, readiness checks
@@ -62,14 +64,14 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 
 #### 7. Ollama Provider ✅
 - **`backend/providers/ollama.py`**: Full implementation for local Ollama inference
-- Models: qwen3:4b, gemma3:4b, phi4-mini. Streaming + health checks.
+- Models: qwen3:4b, gemma3:4b, phi4-mini, llava:7b. Streaming + health checks.
 
 #### 8. Hugging Face Provider ✅
 - **`backend/providers/huggingface.py`**: Automatic device detection (CUDA/CPU), TextIteratorStreamer
 
-#### 9. Cloud Provider Stubs ✅
+#### 9. Cloud Provider Implementations ✅
 - **`backend/providers/openai.py`**, `anthropic.py`, `gemini.py`, `azure.py`
-- All raise `NotImplementedError` with clear messaging — activated in Phase 10
+- All fully implemented — activated via API key in `.env` (Phase 10)
 
 #### 10. LLM Factory ✅
 - **`backend/providers/factory.py`**: Dynamic selection, automatic fallback, health checking
@@ -79,9 +81,11 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 ### Basic RAG (Phase 1)
 
 #### 11. Document Ingestion ✅
-- **`backend/ingestion/loaders/`**: PDF (PyPDF2) and DOCX (python-docx) loaders
+- **`backend/ingestion/loaders/pdf_loader.py`**: PyPDF2-based PDF loader (legacy fallback)
+- **`backend/ingestion/loaders/pdf_loader_v2.py`**: Enhanced pdfplumber loader (Phase 13 — default)
+- **`backend/ingestion/loaders/docx_loader.py`**: DOCX loader via python-docx
 - **`backend/ingestion/chunking.py`**: RecursiveCharacterTextSplitter (1000 chars, 200 overlap)
-- **`backend/ingestion/pipeline.py`**: End-to-end ingestion orchestrator
+- **`backend/ingestion/pipeline.py`**: End-to-end ingestion orchestrator with chunk type tagging
 
 #### 12. Embeddings & Vector Store ✅
 - **`backend/llm/embeddings.py`**: BAAI/bge-small-en-v1.5 (384 dim), GPU/CPU auto
@@ -217,7 +221,7 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 #### 41. Five Specialised Sub-Agents ✅
 - **Research Agent** — sub-question decomposition + synthesis
 - **Retrieval Agent** — query expansion + multi-strategy parallel retrieval
-- **Knowledge Agent** — entity extraction + context enrichment (upgraded in Phase 12)
+- **Knowledge Agent** — entity extraction + KG context enrichment (full KG pipeline from Phase 12)
 - **Evaluation Agent** — heuristic + optional RAGAS quality scoring
 - **Governance Agent** — safety gate (guardrails + confidence + attribution)
 
@@ -255,25 +259,75 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 
 ---
 
+### Enhanced PDF Ingestion (Phase 13)
+
+#### 51. Enhanced PDF Loader ✅
+- **`backend/ingestion/loaders/pdf_loader_v2.py`**: `EnhancedPDFLoader` — pdfplumber-based, replaces PyPDF2 as default
+- Extracts paragraph text, structured tables, and triggers chart description per page
+- Graceful fallback to PyPDF2 when pdfplumber not installed
+
+#### 52. Table Serializer ✅
+- **`backend/ingestion/table_serializer.py`**: Converts pdfplumber `list[list]` rows → Markdown (default) or CSV
+- Functions: `table_to_markdown()`, `table_to_csv()`, `tables_to_text_blocks()`
+
+#### 53. OCR Processor ✅
+- **`backend/ingestion/ocr_processor.py`**: pytesseract wrapper for scanned/image-only pages
+- Graceful degradation when pytesseract/Pillow not installed — never crashes
+
+#### 54. Table Chunks ✅
+- Tables indexed as dedicated `[TABLE]` chunks with `chunk_type="table"` metadata
+- Preserves row/column structure that PyPDF2 destroyed
+
+---
+
+### Chart & Image Understanding (Phase 14)
+
+#### 55. Chart Describer ✅
+- **`backend/ingestion/chart_describer.py`**: `ChartDescriber` — calls `llava:7b` via Ollama for each significant image region
+- Pipeline: pdfplumber image bbox → render page at 150 DPI → crop → base64 PNG → llava prompt → description text
+- Area filter (`min_area_pts=5000`) skips logos/bullets
+- Rate limiter (`max_per_page=3`) bounds llava calls per page
+- Coord flip: pdfplumber bottom-left → PIL top-left correctly handled
+
+#### 56. Chart Chunks ✅
+- Chart descriptions indexed as `[CHART]` chunks with `chunk_type="chart"` metadata
+- Runs fully locally via Ollama — no API keys, no data leaves the machine
+
+#### 57. Three-Engine Pipeline ✅
+- **Text-layer PDFs**: pdfplumber → text + table chunks
+- **Charts/images in text PDFs**: llava:7b → chart description chunks
+- **Scanned pages**: OCR fallback (pytesseract, optional install)
+
+---
+
 ## 📊 Statistics
 
 ### Code Files Created/Modified
-- **Backend**: 45+ Python files across 12 modules
-- **Frontend**: 6 Streamlit pages/components
-- **Configuration**: 6 files
-- **Documentation**: 12+ markdown files
+- **Backend**: 55+ Python files across 14 modules
+- **Frontend**: 6 Streamlit pages
+- **Configuration**: 7 files (including `.bob/skills/`)
+- **Documentation**: 16+ markdown files
 
 ### API Endpoints Live
-- 5 document operations
-- 4 chat operations
-- 2 agentic RAG operations
-- 3 memory operations
-- 2 evaluation operations
-- 3 guardrails operations
-- 4 admin/health operations
-- 2 multi-agent operations
-- 6 knowledge graph operations
-- **Total: 31 endpoints**
+- 5 document operations (`/api/v1/documents`)
+- 4 chat operations (`/api/v1/chat`)
+- 2 agentic RAG operations (`/api/v1/agent`)
+- 3 memory operations (`/api/v1/memory`)
+- 2 evaluation operations (`/api/v1/evaluate`)
+- 3 guardrails operations (`/api/v1/guardrails`)
+- 4 admin/health operations (`/health`, `/api/v1/admin`, `/api/v1/status`)
+- 1 auth operation (`/auth/token`)
+- 1 feedback operation (`/api/v1/feedback`)
+- 2 multi-agent operations (`/api/v1/multi-agent`)
+- 6 knowledge graph operations (`/api/v1/kg`)
+- **Total: 33 endpoints**
+
+### Chunk Types in FAISS + BM25
+| `chunk_type` | Prefix | Source |
+|---|---|---|
+| `"text"` | none | pdfplumber paragraph text / DOCX text |
+| `"table"` | `[TABLE]` | pdfplumber tables → Markdown |
+| `"chart"` | `[CHART]` | llava:7b image description |
 
 ### Lines of Code (approximate)
 - **Backend Core + Providers**: ~1,200 lines
@@ -283,9 +337,18 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 - **Memory**: ~400 lines
 - **Agents (LangGraph)**: ~1,200 lines
 - **Knowledge Graph**: ~900 lines
-- **Frontend (Streamlit)**: ~1,600 lines
-- **Documentation**: ~6,000 lines
-- **Total**: ~9,700+ lines
+- **Ingestion (Phases 13+14)**: ~700 lines
+- **Frontend (Streamlit)**: ~1,800 lines
+- **Documentation**: ~7,500 lines
+- **Total**: ~10,400+ lines
+
+### Ollama Models Used
+| Model | Purpose |
+|---|---|
+| `qwen3:4b` | Default LLM — RAG generation, agent reasoning, query understanding |
+| `gemma3:4b` | Secondary / A-B testing |
+| `phi4-mini` | Fast testing, CI validation |
+| `llava:7b` | Multi-modal — chart and image description (Phase 14) |
 
 ---
 
@@ -367,6 +430,21 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 - [x] 6 Knowledge Graph REST endpoints
 - [x] Knowledge Graph Explorer Streamlit UI
 
+### Phase 13: Enhanced PDF Ingestion ✅
+- [x] pdfplumber extracts structured tables (not garbled flat text)
+- [x] Tables serialised to Markdown → indexed as [TABLE] chunks
+- [x] OCR fallback wired (pytesseract — install separately to activate)
+- [x] Graceful fallback to PyPDF2 when pdfplumber unavailable
+- [x] `chunk_type` metadata on every chunk
+
+### Phase 14: Chart & Image Understanding ✅
+- [x] ChartDescriber uses llava:7b via Ollama (local, no API key)
+- [x] Per-page image bbox extraction via pdfplumber
+- [x] Page rendered at 150 DPI, cropped to image bbox, sent to llava
+- [x] Chart descriptions indexed as [CHART] chunks
+- [x] Area filter and per-page rate limiter prevent runaway inference
+- [x] Statistics UI updated with 4-metric extraction engine card
+
 ---
 
 ## 🏗️ Architecture Highlights
@@ -374,26 +452,30 @@ Successfully implemented the complete Enterprise Agentic RAG Platform covering a
 ### Design Patterns Used
 
 1. **Abstract Factory**: LLM provider creation
-2. **Strategy Pattern**: Provider and retrieval method selection
-3. **Singleton**: Settings, logger, shared BM25 / vector store / GraphStore instances
+2. **Strategy Pattern**: Provider, retrieval method, and OCR engine selection
+3. **Singleton**: Settings, logger, shared BM25 / vector store / GraphStore / ChartDescriber instances
 4. **Dependency Injection**: Node dependencies via `functools.partial`
 5. **State Machine**: LangGraph directed graph for agentic workflow
 6. **Pipeline**: Linear RAGChain for standard chat; graph for agentic chat
 7. **Graph Database**: NetworkX MultiDiGraph for entity–relation knowledge
+8. **Multi-Modal**: llava:7b vision model integrated into ingestion pipeline
 
 ### Key Architectural Decisions
 
 1. **Provider Abstraction**: Never directly call provider SDKs — always go through `LLMService`
-2. **Local-First**: Ollama for development, cloud providers activated in Phase 10
-3. **Fallback Mechanism**: Automatic provider switching on failure; regex fallback for LLM extraction
+2. **Local-First**: Ollama for all inference (text + vision), cloud providers activated via API key
+3. **Fallback Mechanism**: pdfplumber → PyPDF2; pytesseract → empty string; llava error → empty string
 4. **Dual Pipeline**: Linear `RAGChain` for low-latency chat; `AgentGraph` for adaptive accuracy
 5. **Configuration-Driven**: Every behaviour toggle via environment variables
 6. **Modular Design**: Each phase's code is isolated and independently testable
 7. **Pure-Python KG**: NetworkX + JSON persistence — no external graph DB required
+8. **Three Chunk Types**: text / table / chart — full PDF content visible to RAG
 
 ---
 
-**Implementation Date**: 2026-07-01
-**Version**: 12.0.0
-**Status**: Phases 0–12 Complete ✅
+**Implementation Date**: 2026-07-02
+**Version**: 14.0.0
+**Status**: Phases 0–14 Complete ✅
 **Platform**: Enterprise Agentic RAG Platform
+
+# Made with Bob
