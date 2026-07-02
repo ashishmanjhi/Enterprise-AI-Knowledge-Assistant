@@ -8,25 +8,25 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 
 **Current Phase: Phase 14 Complete — Chart & Image Understanding (llava Multi-Modal)**
 
-| Phase | Name | Status |
-|-------|------|--------|
-| 0 | Core Foundation | ✅ Complete |
-| 0.25 | Local AI Infrastructure | ✅ Complete |
-| 0.5 | Provider Abstraction Layer | ✅ Complete |
-| 1 | Basic RAG | ✅ Complete |
-| 2 | Hybrid Retrieval | ✅ Complete |
-| 3 | Query Understanding | ✅ Complete |
-| 4 | Retrieval Optimization (Reranking) | ✅ Complete |
-| 5 | Evaluation Framework (RAGAS) | ✅ Complete |
-| 6 | Conversational Memory | ✅ Complete |
-| 7 | Safety & Governance | ✅ Complete |
-| 8 | User Experience | ✅ Complete |
-| 9 | Agentic RAG (LangGraph) | ✅ Complete |
-| 10 | Production Readiness | ✅ Complete |
-| 11 | Multi-Agent Ecosystem | ✅ Complete |
-| 12 | Knowledge Graph Enhancement | ✅ Complete |
-| 13 | Enhanced PDF Ingestion (Tables + OCR) | ✅ Complete |
-| 14 | Chart & Image Understanding (llava) | ✅ Complete |
+| Phase | Name                                  | Status      |
+| ----- | ------------------------------------- | ----------- |
+| 0     | Core Foundation                       | ✅ Complete |
+| 0.25  | Local AI Infrastructure               | ✅ Complete |
+| 0.5   | Provider Abstraction Layer            | ✅ Complete |
+| 1     | Basic RAG                             | ✅ Complete |
+| 2     | Hybrid Retrieval                      | ✅ Complete |
+| 3     | Query Understanding                   | ✅ Complete |
+| 4     | Retrieval Optimization (Reranking)    | ✅ Complete |
+| 5     | Evaluation Framework (RAGAS)          | ✅ Complete |
+| 6     | Conversational Memory                 | ✅ Complete |
+| 7     | Safety & Governance                   | ✅ Complete |
+| 8     | User Experience                       | ✅ Complete |
+| 9     | Agentic RAG (LangGraph)               | ✅ Complete |
+| 10    | Production Readiness                  | ✅ Complete |
+| 11    | Multi-Agent Ecosystem                 | ✅ Complete |
+| 12    | Knowledge Graph Enhancement           | ✅ Complete |
+| 13    | Enhanced PDF Ingestion (Tables + OCR) | ✅ Complete |
+| 14    | Chart & Image Understanding (llava)   | ✅ Complete |
 
 ---
 
@@ -35,6 +35,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 ### Implemented (Phases 0–14)
 
 #### Phase 0–0.5: Foundation
+
 - **FastAPI Backend** with health checks and status monitoring
 - **Streamlit Frontend** with intuitive multi-page UI
 - **Provider Abstraction Layer** supporting multiple LLM providers
@@ -48,6 +49,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Health Monitoring** for all services
 
 #### Phase 1: Basic RAG
+
 - **Document Ingestion** — Upload and process PDF and DOCX files
 - **Intelligent Chunking** — RecursiveCharacterTextSplitter (1000 chars, 200 overlap)
 - **Semantic Embeddings** — BAAI/bge-small-en-v1.5 (384 dimensions)
@@ -56,6 +58,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Document Management** — Upload, list, search, delete operations
 
 #### Phase 2: Hybrid Retrieval
+
 - **BM25 Keyword Search** — Statistical keyword-based retrieval with TF-IDF scoring
 - **Reciprocal Rank Fusion (RRF)** — Intelligent merging of semantic and keyword results
 - **Hybrid Retriever** — Combines FAISS semantic search with BM25 keyword search
@@ -64,18 +67,21 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Dual Score Display** — Shows both semantic and keyword scores with rankings
 
 #### Phase 3: Query Understanding
+
 - **Query Reformulation** — LLM rewrites vague or ambiguous queries
 - **Query Expansion** — Generates 3 alternative phrasings to increase recall
 - **HyDE (Hypothetical Document Embeddings)** — Generates a hypothetical answer for better semantic search
 - **Query Processor** — Orchestrates all three techniques with graceful degradation
 
 #### Phase 4: Retrieval Optimization
+
 - **Cross-Encoder Reranker** — `cross-encoder/ms-marco-MiniLM-L-6-v2` for second-pass scoring
 - **Configurable Top-N** — Keep only the best N results after reranking
 - **Lazy Model Loading** — Downloads ~22 MB on first use, cached thereafter
 - **Per-Request Toggle** — Enable/disable reranking per chat request
 
 #### Phase 5: Evaluation Framework (RAGAS)
+
 - **Faithfulness** — Does the answer stick to the retrieved context?
 - **Answer Relevancy** — Does the answer actually address the question?
 - **Context Precision** — Were the right chunks retrieved?
@@ -84,6 +90,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Evaluation UI** — Manual entry and JSON batch input via Streamlit page
 
 #### Phase 6: Conversational Memory
+
 - **Redis-Backed Session Store** — Per-conversation message history with 24 h TTL
 - **Graceful Fallback** — In-process dict when Redis is unavailable
 - **Auto-History Loading** — Chat route loads persisted history automatically
@@ -91,6 +98,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Memory API** — REST endpoints to fetch/delete conversation history
 
 #### Phase 7: Safety & Governance
+
 - **Prompt Injection Detection** — 14 regex patterns (jailbreaks, instruction overrides, delimiter injection)
 - **PII Detection & Redaction** — SSN, credit cards, emails, phone numbers, API keys
 - **Toxicity Detection** — Violence, self-harm, and harassment patterns
@@ -100,6 +108,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Safety UI** — Guardrail status panel in Chat sidebar
 
 #### Phase 8: User Experience
+
 - **Streaming Responses** — Server-sent events (SSE) for token-by-token output in Chat UI
 - **History Restore** — Conversation history automatically reloaded on page refresh
 - **Safety Badges** — Guardrail warning indicators shown on each response
@@ -107,6 +116,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Filename Search Filter** — Filter documents by name in the Document Library tab
 
 #### Phase 11: Multi-Agent Ecosystem
+
 - **5 Specialised Sub-Agents** — Research, Retrieval, Knowledge, Evaluation, Governance — each a compiled LangGraph sub-graph
 - **Multi-Agent Orchestrator** — classifies query intent, routes to the right agent pipeline, then chains all five agents in sequence
 - **Research Agent** — decomposes complex questions into sub-questions, answers each independently, synthesises findings
@@ -117,6 +127,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Multi-Agent UI** — `🌐 Multi-Agent` Streamlit page with per-agent cards, quality metrics, entity panel, governance badge
 
 #### Phase 12: Knowledge Graph Enhancement
+
 - **GraphStore** — NetworkX `MultiDiGraph` KG with entity nodes and relation edges, persisted as JSON (`data/knowledge_graph.json`)
 - **Entity Extractor** — LLM-first NER with typed labels (PERSON, ORG, PRODUCT, LOCATION, CONCEPT, TECHNICAL) + regex fallback
 - **Relation Mapper** — LLM extracts `subject | predicate | object` triples; heuristic regex fallback for `is / uses / has` patterns
@@ -127,6 +138,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Knowledge Graph UI** — `🕸️ Knowledge Graph` Streamlit page with Build, Query, Entities, and Relations tabs
 
 #### Phase 13: Enhanced PDF Ingestion (Tables + OCR)
+
 - **EnhancedPDFLoader** — pdfplumber-based PDF loader; extracts paragraph text AND structured tables per page
 - **TableSerializer** — converts pdfplumber `list[list]` rows to Markdown (default) or CSV strings ready for chunking
 - **OCRProcessor** — pytesseract wrapper for scanned / image-only pages; gracefully degrades when not installed
@@ -136,6 +148,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Documents UI Update** — Statistics tab shows extraction backend, table support, and OCR status; Upload Tips updated
 
 #### Phase 14: Chart & Image Understanding (llava Multi-Modal)
+
 - **ChartDescriber** — `backend/ingestion/chart_describer.py`; uses `ollama.chat(llava:7b)` to describe each image region extracted by pdfplumber
 - **Per-page image pipeline** — renders page at 150 DPI → crops bbox → base64 PNG → llava prompt → plain-text description
 - **`[CHART]` chunks** — descriptions indexed with `chunk_type="chart"` prefix alongside text and table chunks
@@ -146,6 +159,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Graceful degradation** — any ollama error or missing dependency → empty string, ingestion continues
 
 #### Phase 10: Production Readiness
+
 - **JWT Authentication** — `POST /auth/token` issues signed Bearer tokens; `JWTAuthMiddleware` enforces on all routes when `AUTH_ENABLED=true`
 - **Cloud Provider Activation** — OpenAI, Anthropic, Gemini, and Azure OpenAI fully implemented (set the matching API key to activate)
 - **LangSmith Tracing** — every `AgentGraph.run()` and its nodes are traced in LangSmith when `LANGSMITH_ENABLED=true`
@@ -154,6 +168,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Production Podman Compose** — Caddy TLS termination, internal-only DB network, resource limits, health checks
 
 #### Phase 9: Agentic RAG (LangGraph)
+
 - **LangGraph State Machine** — Full directed graph with conditional edges and loop guards
 - **Automatic Routing** — LLM classifies each query and picks `hybrid`, `faiss`, or `bm25`
 - **Query Rewriting** — Agent rewrites vague queries before retrieval (configurable max rewrites)
@@ -168,10 +183,12 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 ## Prerequisites
 
 ### Required
+
 - Python 3.9 or higher
 - Ollama with at least one model (e.g. `qwen3:4b`)
 
 ### Optional
+
 - Podman + podman-compose (for PostgreSQL and Redis)
 - Redis (for persistent conversation memory)
 - GPU (for faster embeddings and LLM inference)
@@ -225,24 +242,26 @@ ollama pull qwen3:4b
 ### 6. Start the Application
 
 **Terminal 1 — Backend:**
+
 ```bash
 uvicorn backend.api.main:app --reload --port 8000
 ```
 
 **Terminal 2 — Frontend:**
+
 ```bash
 streamlit run frontend/streamlit/app.py
 ```
 
 ### 7. Access the Application
 
-| Service | URL |
-|---------|-----|
-| Frontend UI | http://localhost:8501 |
-| Backend API | http://localhost:8000 |
-| API Documentation | http://localhost:8000/docs |
-| Health Check | http://localhost:8000/health |
-| Agentic Chat | http://localhost:8501 → 🤖 Agent page |
+| Service           | URL                                   |
+| ----------------- | ------------------------------------- |
+| Frontend UI       | http://localhost:8501                 |
+| Backend API       | http://localhost:8000                 |
+| API Documentation | http://localhost:8000/docs            |
+| Health Check      | http://localhost:8000/health          |
+| Agentic Chat      | http://localhost:8501 → 🤖 Agent page |
 
 ---
 
@@ -346,58 +365,65 @@ Enterprise-AI-Knowledge-Assistant/
 ## API Endpoints
 
 ### Document Operations
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/documents/upload` | Upload a PDF or DOCX file |
-| `GET` | `/api/v1/documents` | List all documents |
-| `GET` | `/api/v1/documents/{id}` | Get document details |
-| `DELETE` | `/api/v1/documents/{id}` | Delete a document |
-| `GET` | `/api/v1/documents/stats/overview` | System statistics |
+
+| Method   | Path                               | Description               |
+| -------- | ---------------------------------- | ------------------------- |
+| `POST`   | `/api/v1/documents/upload`         | Upload a PDF or DOCX file |
+| `GET`    | `/api/v1/documents`                | List all documents        |
+| `GET`    | `/api/v1/documents/{id}`           | Get document details      |
+| `DELETE` | `/api/v1/documents/{id}`           | Delete a document         |
+| `GET`    | `/api/v1/documents/stats/overview` | System statistics         |
 
 ### Chat Operations
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/chat` | RAG chat (with memory + guardrails) |
-| `POST` | `/api/v1/chat/stream` | Streaming chat (SSE) |
-| `POST` | `/api/v1/chat/direct` | Direct LLM (no retrieval) |
-| `GET` | `/api/v1/chat/health` | LLM service health |
+
+| Method | Path                  | Description                         |
+| ------ | --------------------- | ----------------------------------- |
+| `POST` | `/api/v1/chat`        | RAG chat (with memory + guardrails) |
+| `POST` | `/api/v1/chat/stream` | Streaming chat (SSE)                |
+| `POST` | `/api/v1/chat/direct` | Direct LLM (no retrieval)           |
+| `GET`  | `/api/v1/chat/health` | LLM service health                  |
 
 ### Agentic RAG (Phase 9)
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/agent/chat` | Agentic chat via LangGraph pipeline |
-| `GET` | `/api/v1/agent/health` | Agent subsystem health |
+
+| Method | Path                   | Description                         |
+| ------ | ---------------------- | ----------------------------------- |
+| `POST` | `/api/v1/agent/chat`   | Agentic chat via LangGraph pipeline |
+| `GET`  | `/api/v1/agent/health` | Agent subsystem health              |
 
 ### Conversation Memory (Phase 6)
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/v1/memory/{id}` | Fetch conversation history |
-| `GET` | `/api/v1/memory/{id}/info` | Conversation metadata |
-| `DELETE` | `/api/v1/memory/{id}` | Delete conversation history |
+
+| Method   | Path                       | Description                 |
+| -------- | -------------------------- | --------------------------- |
+| `GET`    | `/api/v1/memory/{id}`      | Fetch conversation history  |
+| `GET`    | `/api/v1/memory/{id}/info` | Conversation metadata       |
+| `DELETE` | `/api/v1/memory/{id}`      | Delete conversation history |
 
 ### Evaluation (Phase 5)
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/evaluate` | Run RAGAS evaluation |
-| `GET` | `/api/v1/evaluate/metrics` | List available metrics |
+
+| Method | Path                       | Description            |
+| ------ | -------------------------- | ---------------------- |
+| `POST` | `/api/v1/evaluate`         | Run RAGAS evaluation   |
+| `GET`  | `/api/v1/evaluate/metrics` | List available metrics |
 
 ### Safety & Guardrails (Phase 7)
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/guardrails/check/input` | Run input safety checks |
+
+| Method | Path                              | Description              |
+| ------ | --------------------------------- | ------------------------ |
+| `POST` | `/api/v1/guardrails/check/input`  | Run input safety checks  |
 | `POST` | `/api/v1/guardrails/check/output` | Run output safety checks |
-| `GET` | `/api/v1/guardrails/status` | Enabled guardrail checks |
+| `GET`  | `/api/v1/guardrails/status`       | Enabled guardrail checks |
 
 ### Admin & System
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/v1/admin/clear-vector-stores` | Clear all indices |
-| `GET` | `/api/v1/admin/system-info` | System information |
-| `GET` | `/health` | Basic health check |
-| `GET` | `/healthz` | Kubernetes-style health |
-| `GET` | `/readyz` | Readiness check |
-| `GET` | `/api/v1/status` | Detailed service status |
-| `GET` | `/docs` | Interactive Swagger UI |
+
+| Method | Path                                | Description             |
+| ------ | ----------------------------------- | ----------------------- |
+| `POST` | `/api/v1/admin/clear-vector-stores` | Clear all indices       |
+| `GET`  | `/api/v1/admin/system-info`         | System information      |
+| `GET`  | `/health`                           | Basic health check      |
+| `GET`  | `/healthz`                          | Kubernetes-style health |
+| `GET`  | `/readyz`                           | Readiness check         |
+| `GET`  | `/api/v1/status`                    | Detailed service status |
+| `GET`  | `/docs`                             | Interactive Swagger UI  |
 
 ---
 
@@ -408,6 +434,7 @@ Copy `.env.example` to `.env` and adjust as needed.
 ### Key Settings by Phase
 
 #### Core (All Phases)
+
 ```env
 OLLAMA_HOST=http://localhost:11434
 OLLAMA_DEFAULT_MODEL=qwen3:4b
@@ -416,6 +443,7 @@ EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
 ```
 
 #### Phase 2 — Hybrid Retrieval
+
 ```env
 DEFAULT_RETRIEVAL_METHOD=hybrid   # hybrid | faiss | bm25
 FAISS_WEIGHT=0.5
@@ -424,6 +452,7 @@ RRF_K=60
 ```
 
 #### Phase 3 — Query Understanding
+
 ```env
 ENABLE_QUERY_REFORMULATION=true
 ENABLE_QUERY_EXPANSION=true
@@ -432,6 +461,7 @@ NUM_QUERY_EXPANSIONS=3
 ```
 
 #### Phase 4 — Reranking
+
 ```env
 ENABLE_RERANKING=false            # downloads model on first use
 RERANKER_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
@@ -439,12 +469,14 @@ RERANKER_TOP_N=3
 ```
 
 #### Phase 5 — Evaluation
+
 ```env
 EVAL_JUDGE_MODEL=                 # blank = use OLLAMA_DEFAULT_MODEL
 EVAL_MAX_SAMPLES=50
 ```
 
 #### Phase 6 — Conversational Memory
+
 ```env
 MEMORY_SESSION_TTL=86400          # 24 hours
 MEMORY_MAX_HISTORY_MESSAGES=20
@@ -453,6 +485,7 @@ MEMORY_SUMMARY_THRESHOLD=10
 ```
 
 #### Phase 7 — Safety & Guardrails
+
 ```env
 GUARDRAILS_ENABLE_INJECTION=true
 GUARDRAILS_ENABLE_TOXICITY=true
@@ -465,6 +498,7 @@ GUARDRAILS_BLOCK_ON_HALLUCINATION=false
 ```
 
 #### Phase 9 — Agentic RAG
+
 ```env
 AGENT_ENABLE_DOCUMENT_GRADING=true   # LLM grades each chunk for relevance
 AGENT_ENABLE_GROUNDING_CHECK=true    # Post-generation grounding verification
@@ -472,6 +506,7 @@ AGENT_MAX_REWRITES=2                 # Max query rewrite iterations
 ```
 
 #### Phase 10 — Production (Cloud Providers & Auth)
+
 ```env
 # Cloud LLM providers (set to activate)
 OPENAI_API_KEY=sk-...
@@ -506,21 +541,22 @@ pytest backend/tests/ --cov=backend --cov-report=term-missing
 
 ### Test Coverage
 
-| Module | Tests | Coverage |
-|--------|-------|----------|
-| Chunking | 16 | Document chunking logic |
-| Loaders | 12 | PDF and DOCX ingestion |
-| Query Understanding | 22 | Reformulation, expansion, HyDE |
-| Reranker | 12 | Cross-encoder reranking |
-| Memory (Phase 6) | 30 | Session store + conversation manager |
-| Guardrails (Phase 7) | 41 | Detectors, hallucination, pipeline |
-| **Total** | **133+** | |
+| Module               | Tests    | Coverage                             |
+| -------------------- | -------- | ------------------------------------ |
+| Chunking             | 16       | Document chunking logic              |
+| Loaders              | 12       | PDF and DOCX ingestion               |
+| Query Understanding  | 22       | Reformulation, expansion, HyDE       |
+| Reranker             | 12       | Cross-encoder reranking              |
+| Memory (Phase 6)     | 30       | Session store + conversation manager |
+| Guardrails (Phase 7) | 41       | Detectors, hallucination, pipeline   |
+| **Total**            | **133+** |                                      |
 
 ---
 
 ## Troubleshooting
 
 ### Backend Won't Start
+
 ```bash
 # Check if port 8000 is in use (Windows)
 netstat -an | findstr 8000
@@ -530,6 +566,7 @@ python -c "from backend.api.main import app; print('OK')"
 ```
 
 ### Ollama Connection Failed
+
 ```bash
 ollama list
 ollama serve
@@ -538,47 +575,54 @@ curl http://localhost:11434/api/tags
 ```
 
 ### Redis Unavailable
+
 Redis is optional. When unavailable, conversational memory falls back to an in-process dictionary (data is lost on restart). Start Redis with:
+
 ```bash
 podman-compose -f deploy/podman/podman-compose.yml up -d redis
 ```
 
 ### Chat Blocked by Guardrails (HTTP 400)
+
 A `request_blocked_by_guardrails` error means the input triggered injection or toxicity detection. Check `block_reason` in the response body. To temporarily disable:
+
 ```env
 GUARDRAILS_BLOCK_ON_INJECTION=false
 GUARDRAILS_BLOCK_ON_TOXICITY=false
 ```
 
 ### Document Upload Fails
+
 - Supported formats: PDF, DOCX only
 - Max file size: 10 MB (configurable via `MAX_FILE_SIZE`)
 - Check backend logs: `logs/app.log`
 
 ### Slow First Response
+
 - First LLM request: Ollama loads the model (~10–30 s on CPU)
 - First embedding: Model downloads on first run (~50 MB)
 - Reranker first use: Downloads ~22 MB cross-encoder model
 - Agent mode: Each query runs 3–6 LLM calls (routing, grading, generation, grounding)
 
 ### Agent Grounding Check Always Fails
+
 Set `AGENT_ENABLE_GROUNDING_CHECK=false` to disable (e.g. when Ollama is slow and you want faster responses), or raise `AGENT_MAX_REWRITES=0` to skip the recovery loop.
 
 ---
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [docs/PHASE_9_IMPLEMENTATION.md](docs/PHASE_9_IMPLEMENTATION.md) | Phase 9 Agentic RAG architecture and implementation |
-| [docs/PHASES_3_TO_7_SUMMARY.md](docs/PHASES_3_TO_7_SUMMARY.md) | Implementation summary for Phases 3–7 |
-| [docs/PHASE_8_IMPLEMENTATION_PLAN.md](docs/PHASE_8_IMPLEMENTATION_PLAN.md) | Phase 8 UX plan |
-| [docs/PHASE_2_IMPLEMENTATION_PLAN.md](docs/PHASE_2_IMPLEMENTATION_PLAN.md) | Phase 2 architecture |
-| [docs/PHASE_1_DOCUMENTATION.md](docs/PHASE_1_DOCUMENTATION.md) | Phase 1 full documentation |
-| [docs/phase-0-architecture.md](docs/phase-0-architecture.md) | System architecture overview |
-| [docs/project-roadmap.md](docs/project-roadmap.md) | Full 12-phase roadmap |
-| [QUICKSTART.md](QUICKSTART.md) | 5-minute setup guide |
-| [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) | Overall implementation summary |
+| Document                                                                   | Description                                         |
+| -------------------------------------------------------------------------- | --------------------------------------------------- |
+| [docs/PHASE_9_IMPLEMENTATION.md](docs/PHASE_9_IMPLEMENTATION.md)           | Phase 9 Agentic RAG architecture and implementation |
+| [docs/PHASES_3_TO_7_SUMMARY.md](docs/PHASES_3_TO_7_SUMMARY.md)             | Implementation summary for Phases 3–7               |
+| [docs/PHASE_8_IMPLEMENTATION_PLAN.md](docs/PHASE_8_IMPLEMENTATION_PLAN.md) | Phase 8 UX plan                                     |
+| [docs/PHASE_2_IMPLEMENTATION_PLAN.md](docs/PHASE_2_IMPLEMENTATION_PLAN.md) | Phase 2 architecture                                |
+| [docs/PHASE_1_DOCUMENTATION.md](docs/PHASE_1_DOCUMENTATION.md)             | Phase 1 full documentation                          |
+| [docs/phase-0-architecture.md](docs/phase-0-architecture.md)               | System architecture overview                        |
+| [docs/project-roadmap.md](docs/project-roadmap.md)                         | Full 12-phase roadmap                               |
+| [QUICKSTART.md](QUICKSTART.md)                                             | 5-minute setup guide                                |
+| [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)                     | Overall implementation summary                      |
 
 ---
 
@@ -618,5 +662,3 @@ Set `AGENT_ENABLE_GROUNDING_CHECK=false` to disable (e.g. when Ollama is slow an
 **Version**: 11.0.0
 **Status**: Phase 11 Complete ✅
 **Last Updated**: 2026-07-01
-#   E n t e r p r i s e - A I - K n o w l e d g e - A s s i s t a n t  
- 
