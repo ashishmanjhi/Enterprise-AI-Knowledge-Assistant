@@ -115,6 +115,26 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Query Metadata Panel** — Shows techniques applied (HyDE, expansion, reranking) per query
 - **Filename Search Filter** — Filter documents by name in the Document Library tab
 
+#### Phase 9: Agentic RAG (LangGraph)
+
+- **LangGraph State Machine** — Full directed graph with conditional edges and loop guards
+- **Automatic Routing** — LLM classifies each query and picks `hybrid`, `faiss`, or `bm25`
+- **Query Rewriting** — Agent rewrites vague queries before retrieval (configurable max rewrites)
+- **Document Grading** — LLM scores each retrieved chunk yes/no for relevance; irrelevant chunks are dropped before generation
+- **Grounding Verification** — Post-generation check verifies the answer only uses information from retrieved context
+- **Loop Recovery** — If grounding fails and rewrite budget remains, graph loops back for another attempt
+- **Full Graph Trace** — Every node execution is logged in the response for observability
+- **Agentic Chat UI** — Dedicated Streamlit page showing strategy chosen, rewrite count, and grounding verdict
+
+#### Phase 10: Production Readiness
+
+- **JWT Authentication** — `POST /auth/token` issues signed Bearer tokens; `JWTAuthMiddleware` enforces on all routes when `AUTH_ENABLED=true`
+- **Cloud Provider Activation** — OpenAI, Anthropic, Gemini, and Azure OpenAI fully implemented (set the matching API key to activate)
+- **LangSmith Tracing** — every `AgentGraph.run()` and its nodes are traced in LangSmith when `LANGSMITH_ENABLED=true`
+- **OpenTelemetry Spans** — FastAPI HTTP spans + `llm.generate` / `agent.run` spans exported to any OTLP collector when `OTEL_ENABLED=true`
+- **User Feedback Collection** — `POST /api/v1/feedback` persists thumbs-up/down ratings; 👍👎 buttons in Chat UI
+- **Production Podman Compose** — Caddy TLS termination, internal-only DB network, resource limits, health checks
+
 #### Phase 11: Multi-Agent Ecosystem
 
 - **5 Specialised Sub-Agents** — Research, Retrieval, Knowledge, Evaluation, Governance — each a compiled LangGraph sub-graph
@@ -147,7 +167,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Pipeline Stats** — `GET /api/v1/documents/stats/overview` now returns `pdf_extraction` backend info
 - **Documents UI Update** — Statistics tab shows extraction backend, table support, and OCR status; Upload Tips updated
 
-#### Phase 14: Chart & Image Understanding (llava Multi-Modal)
+#### Phase 14: Chart & Image Understanding (LLaVA Multi-Modal)
 
 - **ChartDescriber** — `backend/ingestion/chart_describer.py`; uses `ollama.chat(llava:7b)` to describe each image region extracted by pdfplumber
 - **Per-page image pipeline** — renders page at 150 DPI → crops bbox → base64 PNG → llava prompt → plain-text description
@@ -157,26 +177,6 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Coord flip** — pdfplumber bottom-left origin correctly mapped to PIL top-left before cropping
 - **Fully local** — llava:7b runs via Ollama; no API keys, no data leaves the machine
 - **Graceful degradation** — any ollama error or missing dependency → empty string, ingestion continues
-
-#### Phase 10: Production Readiness
-
-- **JWT Authentication** — `POST /auth/token` issues signed Bearer tokens; `JWTAuthMiddleware` enforces on all routes when `AUTH_ENABLED=true`
-- **Cloud Provider Activation** — OpenAI, Anthropic, Gemini, and Azure OpenAI fully implemented (set the matching API key to activate)
-- **LangSmith Tracing** — every `AgentGraph.run()` and its nodes are traced in LangSmith when `LANGSMITH_ENABLED=true`
-- **OpenTelemetry Spans** — FastAPI HTTP spans + `llm.generate` / `agent.run` spans exported to any OTLP collector when `OTEL_ENABLED=true`
-- **User Feedback Collection** — `POST /api/v1/feedback` persists thumbs-up/down ratings; 👍👎 buttons in Chat UI
-- **Production Podman Compose** — Caddy TLS termination, internal-only DB network, resource limits, health checks
-
-#### Phase 9: Agentic RAG (LangGraph)
-
-- **LangGraph State Machine** — Full directed graph with conditional edges and loop guards
-- **Automatic Routing** — LLM classifies each query and picks `hybrid`, `faiss`, or `bm25`
-- **Query Rewriting** — Agent rewrites vague queries before retrieval (configurable max rewrites)
-- **Document Grading** — LLM scores each retrieved chunk yes/no for relevance; irrelevant chunks are dropped before generation
-- **Grounding Verification** — Post-generation check verifies the answer only uses information from retrieved context
-- **Loop Recovery** — If grounding fails and rewrite budget remains, graph loops back for another attempt
-- **Full Graph Trace** — Every node execution is logged in the response for observability
-- **Agentic Chat UI** — Dedicated Streamlit page showing strategy chosen, rewrite count, and grounding verdict
 
 ---
 
@@ -620,7 +620,7 @@ Set `AGENT_ENABLE_GROUNDING_CHECK=false` to disable (e.g. when Ollama is slow an
 | [docs/PHASE_2_IMPLEMENTATION_PLAN.md](docs/PHASE_2_IMPLEMENTATION_PLAN.md) | Phase 2 architecture                                |
 | [docs/PHASE_1_DOCUMENTATION.md](docs/PHASE_1_DOCUMENTATION.md)             | Phase 1 full documentation                          |
 | [docs/phase-0-architecture.md](docs/phase-0-architecture.md)               | System architecture overview                        |
-| [docs/project-roadmap.md](docs/project-roadmap.md)                         | Full 12-phase roadmap                               |
+| [docs/project-roadmap.md](docs/project-roadmap.md)                         | Full 14-phase roadmap                               |
 | [QUICKSTART.md](QUICKSTART.md)                                             | 5-minute setup guide                                |
 | [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)                     | Overall implementation summary                      |
 
@@ -642,7 +642,9 @@ Set `AGENT_ENABLE_GROUNDING_CHECK=false` to disable (e.g. when Ollama is slow an
 - [x] **Phase 9**: Agentic RAG (LangGraph)
 - [x] **Phase 10**: Production Readiness (JWT auth, cloud providers, LangSmith, OTel, feedback)
 - [x] **Phase 11**: Multi-Agent Ecosystem (5 specialised agents + orchestrator)
-- [ ] **Phase 12**: Knowledge Graph Enhancement
+- [x] **Phase 12**: Knowledge Graph Enhancement
+- [x] **Phase 13**: Enhanced PDF Ingestion (tables + OCR)
+- [x] **Phase 14**: Chart & Image Understanding (LLaVA)
 
 ---
 
@@ -659,6 +661,6 @@ Set `AGENT_ENABLE_GROUNDING_CHECK=false` to disable (e.g. when Ollama is slow an
 
 ---
 
-**Version**: 11.0.0
-**Status**: Phase 11 Complete ✅
-**Last Updated**: 2026-07-01
+**Version**: 14.0.0
+**Status**: Phase 14 Complete ✅
+**Last Updated**: 2026-07-02
