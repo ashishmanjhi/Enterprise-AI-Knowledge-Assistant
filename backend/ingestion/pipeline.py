@@ -300,14 +300,15 @@ class IngestionPipeline:
                 metadata=self.metadata_manager.metadata_to_dict(doc_metadata)
             )
 
-        # Phase 13: tag table chunks for downstream traceability
-        prefix = settings.pdf_table_chunk_prefix
+        # Phase 13/14: tag table and chart chunks for downstream traceability
+        table_prefix = settings.pdf_table_chunk_prefix
+        chart_prefix = settings.pdf_chart_chunk_prefix
         for chunk in chunks:
             chunk_text = chunk.get("content", "")
-            if chunk_text.startswith("| ") or chunk_text.startswith("**Table:"):
+            if chunk_text.startswith(f"{chart_prefix} ") or chunk_text.startswith("[CHART]"):
+                chunk["chunk_type"] = "chart"
+            elif chunk_text.startswith("| ") or chunk_text.startswith("**Table:") or chunk_text.startswith(f"{table_prefix} "):
                 chunk["chunk_type"] = "table"
-                if prefix and not chunk_text.startswith(prefix):
-                    chunk["content"] = f"{prefix} {chunk_text}"
             else:
                 chunk.setdefault("chunk_type", "text")
         
@@ -439,9 +440,11 @@ class IngestionPipeline:
                     if isinstance(pdf_loader, EnhancedPDFLoader)
                     else "pypdf2"
                 ),
-                "table_support": isinstance(pdf_loader, EnhancedPDFLoader),
-                "ocr_fallback": settings.pdf_ocr_fallback,
-                "table_format": settings.pdf_table_format,
+                "table_support":   isinstance(pdf_loader, EnhancedPDFLoader),
+                "chart_support":   settings.pdf_chart_description_enabled,
+                "chart_model":     settings.pdf_chart_model,
+                "ocr_fallback":    settings.pdf_ocr_fallback,
+                "table_format":    settings.pdf_table_format,
             },
         }
 

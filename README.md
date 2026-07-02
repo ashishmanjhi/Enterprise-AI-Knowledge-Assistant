@@ -6,7 +6,7 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 
 ## Project Status
 
-**Current Phase: Phase 13 Complete — Enhanced PDF Ingestion (Tables + OCR)**
+**Current Phase: Phase 14 Complete — Chart & Image Understanding (llava Multi-Modal)**
 
 | Phase | Name | Status |
 |-------|------|--------|
@@ -26,12 +26,13 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 | 11 | Multi-Agent Ecosystem | ✅ Complete |
 | 12 | Knowledge Graph Enhancement | ✅ Complete |
 | 13 | Enhanced PDF Ingestion (Tables + OCR) | ✅ Complete |
+| 14 | Chart & Image Understanding (llava) | ✅ Complete |
 
 ---
 
 ## Features
 
-### Implemented (Phases 0–13)
+### Implemented (Phases 0–14)
 
 #### Phase 0–0.5: Foundation
 - **FastAPI Backend** with health checks and status monitoring
@@ -133,6 +134,16 @@ A production-ready Enterprise RAG (Retrieval-Augmented Generation) Platform with
 - **Graceful Fallback** — if pdfplumber not installed → PyPDF2; if pytesseract not installed → blank pages → empty string; never crashes
 - **Pipeline Stats** — `GET /api/v1/documents/stats/overview` now returns `pdf_extraction` backend info
 - **Documents UI Update** — Statistics tab shows extraction backend, table support, and OCR status; Upload Tips updated
+
+#### Phase 14: Chart & Image Understanding (llava Multi-Modal)
+- **ChartDescriber** — `backend/ingestion/chart_describer.py`; uses `ollama.chat(llava:7b)` to describe each image region extracted by pdfplumber
+- **Per-page image pipeline** — renders page at 150 DPI → crops bbox → base64 PNG → llava prompt → plain-text description
+- **`[CHART]` chunks** — descriptions indexed with `chunk_type="chart"` prefix alongside text and table chunks
+- **Area filter** — `pdf_chart_min_area_pts=5000` skips tiny logos and decorative icons
+- **Rate limiter** — `pdf_chart_max_per_page=3` bounds llava calls per page
+- **Coord flip** — pdfplumber bottom-left origin correctly mapped to PIL top-left before cropping
+- **Fully local** — llava:7b runs via Ollama; no API keys, no data leaves the machine
+- **Graceful degradation** — any ollama error or missing dependency → empty string, ingestion continues
 
 #### Phase 10: Production Readiness
 - **JWT Authentication** — `POST /auth/token` issues signed Bearer tokens; `JWTAuthMiddleware` enforces on all routes when `AUTH_ENABLED=true`

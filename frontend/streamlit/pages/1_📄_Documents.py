@@ -99,7 +99,7 @@ with tab1:
     elif upload_button and not uploaded_files:
         st.warning("⚠️ Please select files to upload")
     
-    # Upload tips — Phase 13: describe enhanced extraction
+    # Upload tips — Phase 13 + 14: describe enhanced extraction
     with st.expander("💡 Upload Tips"):
         st.markdown("""
         - **Supported formats**: PDF, DOCX
@@ -110,10 +110,11 @@ with tab1:
         - **Indexing**: Embeddings are indexed in FAISS + BM25 for hybrid retrieval
         """)
         st.info(
-            "🆕 **Phase 13 — Enhanced PDF Extraction**  \n"
-            "Tables in PDF files are now extracted as Markdown tables and indexed "
-            "as dedicated **[TABLE]** chunks.  \n"
-            "Scanned / image-only pages are processed with OCR when pytesseract is installed."
+            "🆕 **Phase 13 — Tables**  \n"
+            "Tables extracted as Markdown → dedicated **[TABLE]** chunks.  \n\n"
+            "🆕 **Phase 14 — Charts & Diagrams**  \n"
+            "Charts and images described by **llava:7b** → dedicated **[CHART]** chunks.  \n"
+            "Scanned pages → OCR fallback when pytesseract is installed."
         )
 
 # Tab 2: Document Library
@@ -219,11 +220,16 @@ with tab3:
                 table_label = "✅ Enabled" if table_support else "❌ Not available"
                 ocr_label = "✅ Enabled" if ocr_fallback else "⚠️ pytesseract not installed"
 
-                st.subheader("📑 PDF Extraction Engine (Phase 13)")
-                c1, c2, c3 = st.columns(3)
+                chart_support = pdf_info.get("chart_support", False)
+                chart_model   = pdf_info.get("chart_model", "")
+                chart_label   = f"✅ {chart_model}" if chart_support else "❌ Disabled"
+
+                st.subheader("📑 PDF Extraction Engine (Phase 13 + 14)")
+                c1, c2, c3, c4 = st.columns(4)
                 c1.metric("Backend", backend_label)
                 c2.metric("Table extraction", table_label)
-                c3.metric("OCR fallback", ocr_label)
+                c3.metric("Chart / image AI", chart_label)
+                c4.metric("OCR fallback", ocr_label)
                 st.divider()
     except Exception:
         pass
@@ -348,10 +354,11 @@ with st.sidebar:
     4. **Embedding**: Chunks are embedded (BGE-small)
     5. **Indexing**: Embeddings → FAISS + BM25
 
-    ### Phase 13 Enhancements
-    - **Tables** extracted as Markdown, indexed as `[TABLE]` chunks
-    - **Scanned pages** processed via OCR fallback
-    - Extraction backend shown in Statistics tab
+    ### Phase 13 + 14 Enhancements
+    - **Tables** → Markdown `[TABLE]` chunks
+    - **Charts / Diagrams** → llava:7b description → `[CHART]` chunks
+    - **Scanned pages** → OCR fallback (pytesseract)
+    - Extraction engine details in Statistics tab
 
     ### Supported Formats
     - PDF (.pdf) — text + tables + OCR

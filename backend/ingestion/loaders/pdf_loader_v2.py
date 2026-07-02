@@ -3,6 +3,7 @@ Enhanced PDF loader using pdfplumber.
 Extracts:
   - Paragraph text (per page)
   - Tables (serialised to Markdown by default)
+  - Chart / image descriptions via llava (Phase 14)
   - Falls back to pytesseract OCR when a page yields no text at all
 
 Falls back to the original PyPDF2 loader automatically if pdfplumber
@@ -103,26 +104,29 @@ class EnhancedPDFLoader(BaseDocumentLoader):
 
         pages: List[Dict[str, Any]] = []
         all_content_parts: List[str] = []
-        total_tables = 0
-        total_ocr_pages = 0
+        total_tables      = 0
+        total_ocr_pages   = 0
+        total_chart_descs = 0
 
         with pdfplumber.open(str(file_path), password=self.password) as pdf:
             pdf_metadata = self._build_metadata(file_path, len(pdf.pages))
 
             for page_num, page in enumerate(pdf.pages, start=1):
-                page_result = self._extract_page(
+                page_result = await self._extract_page(
                     page, page_num, str(file_path)
                 )
                 pages.append(page_result)
 
-                total_tables   += page_result["table_count"]
-                total_ocr_pages += 1 if page_result.get("ocr_used") else 0
+                total_tables      += page_result["table_count"]
+                total_ocr_pages   += 1 if page_result.get("ocr_used") else 0
+                total_chart_descs += page_result.get("chart_count", 0)
 
-                # Combine text + table blocks for the full-document content
+                # Combine text + table blocks + chart blocks for full-document content
                 parts = []
                 if page_result["text"]:
                     parts.append(page_result["text"])
                 parts.extend(page_result["table_blocks"])
+                parts.extend(page_result.get("chart_blocks", []))
                 if parts:
                     all_content_parts.append("\n\n".join(parts))
 
@@ -130,40 +134,56 @@ class EnhancedPDFLoader(BaseDocumentLoader):
         pdf_metadata.update(
             {
                 "total_tables_extracted": total_tables,
-                "total_ocr_pages": total_ocr_pages,
-                "extraction_backend": "pdfplumber",
+                "total_ocr_pages":        total_ocr_pages,
+                "total_charts_described": total_chart_descs,
+                "extraction_backend":     "pdfplumber",
             }
         )
 
         logger.info(
             f"Loaded {file_path.name}: {len(pages)} pages, "
-            f"{total_tables} tables, {total_ocr_pages} OCR pages"
+            f"{total_tables} tables, {total_ocr_pages} OCR pages, "
+            f"{total_chart_descs} chart descriptions"
         )
 
         return {"content": content, "metadata": pdf_metadata, "pages": pages}
 
-    def _extract_page(
+    async def _extract_page(
         self, page: Any, page_num: int, file_path: str
     ) -> Dict[str, Any]:
-        """Extract text and tables from a single pdfplumber page."""
+        """Extract text, tables, and chart descriptions from a pdfplumber page."""
         # 1. Regular text
         raw_text = page.extract_text() or ""
         text     = self._clean_text(raw_text)
 
         # 2. Tables
-        raw_tables  = page.extract_tables() or []
+        raw_tables   = page.extract_tables() or []
         table_blocks: List[str] = []
         for tbl in raw_tables:
             md = table_to_markdown(tbl, caption=f"page {page_num}")
             if md.strip():
                 table_blocks.append(md)
 
-        # 3. OCR fallback when page is blank
+        # 3. Chart / image descriptions via llava (Phase 14)
+        chart_blocks: List[str] = []
+        prefix = settings.pdf_chart_chunk_prefix
+        from backend.ingestion.chart_describer import get_chart_describer
+        describer = get_chart_describer()
+        if describer.enabled:
+            raw_descs = await describer.describe_page_images(page, page_num)
+            for desc in raw_descs:
+                if desc.strip():
+                    chart_blocks.append(
+                        f"{prefix} {desc}" if prefix else desc
+                    )
+
+        # 4. OCR fallback when page is entirely blank (no text, tables, or charts)
         ocr_used = False
         if (
             self.ocr_fallback
             and len(text) < self.min_text_len
             and not table_blocks
+            and not chart_blocks
         ):
             from backend.ingestion.ocr_processor import get_ocr_processor
             ocr = get_ocr_processor()
@@ -173,15 +193,21 @@ class EnhancedPDFLoader(BaseDocumentLoader):
                     text     = ocr_text
                     ocr_used = True
 
+        all_blocks = table_blocks + chart_blocks
         return {
-            "page_number":   page_num,
-            "text":          text,
-            "table_blocks":  table_blocks,
-            "table_count":   len(table_blocks),
-            "ocr_used":      ocr_used,
-            "char_count":    len(text) + sum(len(b) for b in table_blocks),
+            "page_number":  page_num,
+            "text":         text,
+            "table_blocks": table_blocks,
+            "table_count":  len(table_blocks),
+            "chart_blocks": chart_blocks,
+            "chart_count":  len(chart_blocks),
+            "ocr_used":     ocr_used,
+            "char_count":   len(text) + sum(len(b) for b in all_blocks),
             # combined content used by the pipeline chunker
-            "content":       "\n\n".join([text] + table_blocks) if text or table_blocks else "",
+            "content": (
+                "\n\n".join([text] + all_blocks)
+                if text or all_blocks else ""
+            ),
         }
 
     # ------------------------------------------------------------------

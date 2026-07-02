@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     
     # Application
     app_name: str = "Enterprise Agentic RAG Platform"
-    app_version: str = "13.0.0"
+    app_version: str = "14.0.0"
     environment: Literal["development", "staging", "production"] = "development"
     debug: bool = True
     
@@ -167,6 +167,22 @@ class Settings(BaseSettings):
     pdf_ocr_min_text_len:      int   = 20      # chars below which a page is considered blank
     pdf_table_chunk_prefix:    str   = "[TABLE]"   # prepended to table chunks for traceability
     pdf_max_table_chunk_chars: int   = 2000    # large tables split above this char count
+
+    # Chart / Image Understanding — Phase 14 (llava multi-modal)
+    pdf_chart_description_enabled: bool  = True         # describe charts/images via llava
+    pdf_chart_model:               str   = "llava:7b"   # ollama vision model
+    pdf_chart_min_area_pts:        int   = 5000         # min bounding-box area (pts²) to describe
+    pdf_chart_render_dpi:          int   = 150          # DPI to render page before cropping image
+    pdf_chart_max_per_page:        int   = 3            # max images described per page
+    pdf_chart_prompt:              str   = (
+        "You are analysing an image extracted from a PDF document. "
+        "Describe the content in detail: if it is a chart or graph, "
+        "state the chart type, axis labels, data trends, and key values. "
+        "If it is a diagram, describe the components and relationships. "
+        "If it is a photograph or decorative image, say so briefly. "
+        "Keep your description under 150 words."
+    )
+    pdf_chart_chunk_prefix:        str   = "[CHART]"    # prepended to chart description chunks
 
     # Knowledge Graph Enhancement (Phase 12)
     kg_persist_path:              str   = "data/knowledge_graph.json"  # JSON persistence file
