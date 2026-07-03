@@ -2,14 +2,19 @@
 FastAPI application entry point.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from backend.core.settings import settings
 from backend.core.logging import logger
 from backend.core.tracing import setup_tracing, add_otel_middleware
 from backend.api.routes import health, status, documents, chat, admin, evaluate, memory, guardrails, agent, auth, feedback, multi_agent
 from backend.api.routes.knowledge_graph import router as kg_router
 from backend.api.middleware.auth import JWTAuthMiddleware
+from backend.api.middleware.rate_limit import limiter
 
 
 def create_app() -> FastAPI:
@@ -25,7 +30,16 @@ def create_app() -> FastAPI:
         debug=settings.debug,
         description="Enterprise Agentic RAG Platform with multi-provider LLM support"
     )
-    
+
+    # Phase 15: Rate limiting — attach limiter state and register 429 handler
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    if settings.rate_limit_enabled:
+        app.add_middleware(SlowAPIMiddleware)
+        logger.info("Rate limiting enabled")
+    else:
+        logger.info("Rate limiting disabled (RATE_LIMIT_ENABLED=false)")
+
     # JWT auth middleware (Phase 10) — transparent pass-through when auth_enabled=False
     app.add_middleware(JWTAuthMiddleware)
 
@@ -80,6 +94,21 @@ def create_app() -> FastAPI:
     async def startup_event():
         """Application startup event handler."""
         setup_tracing()  # Phase 10: initialise LangSmith + OTel
+
+        # F-04: Warn (dev) or hard-fail (prod) when the JWT secret is the insecure default
+        _INSECURE_SECRET = "change-me-in-production"
+        if settings.jwt_secret_key == _INSECURE_SECRET:
+            if settings.is_production:
+                raise RuntimeError(
+                    "JWT_SECRET_KEY must be changed from the default value before running "
+                    "in production. Set a random 32+ character value in your .env file."
+                )
+            else:
+                logger.warning(
+                    "SECURITY WARNING: JWT_SECRET_KEY is still the default insecure value. "
+                    "Set JWT_SECRET_KEY in .env before any non-local deployment."
+                )
+
         logger.info(f"Starting {settings.app_name} v{settings.app_version}")
         logger.info(f"Environment: {settings.environment}")
         logger.info(f"Debug mode: {settings.debug}")

@@ -417,4 +417,39 @@ class LLMService:
         }
 
 
+# ── LLMFactory — cached singleton accessor ───────────────────────────────
+_llm_cache: Dict[str, "LLMService"] = {}
+
+
+def get_llm_service(
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+) -> "LLMService":
+    """
+    Return a cached ``LLMService`` instance for the given (provider, model) pair.
+
+    Multiple modules previously each called ``LLMService()`` directly, creating
+    separate ``httpx.AsyncClient`` connections and repeating model-load log
+    messages.  Using this factory keeps a single instance per configuration
+    key, which is cheaper and easier to reason about.
+
+    Args:
+        provider: LLM provider name (``None`` → ``settings.default_provider``).
+        model:    Model name (``None`` → provider default from settings).
+
+    Returns:
+        Shared ``LLMService`` instance.
+    """
+    resolved_provider = provider or getattr(settings, "default_provider", "ollama")
+    resolved_model = (
+        model
+        or (settings.ollama_default_model if resolved_provider == "ollama" else "")
+    )
+    cache_key = f"{resolved_provider}:{resolved_model}"
+
+    if cache_key not in _llm_cache:
+        _llm_cache[cache_key] = LLMService(provider=resolved_provider, model=resolved_model or None)
+
+    return _llm_cache[cache_key]
+
 # Made with Bob

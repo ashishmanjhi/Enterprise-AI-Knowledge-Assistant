@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     metadata_path: str = "data/vectorstore/metadata.json"
     
     # BM25 & Hybrid Retrieval (Phase 2)
-    bm25_index_path: str = "data/vectorstore/bm25_index.pkl"
+    bm25_index_path: str = "data/vectorstore/bm25_index.json"
     bm25_k1: float = 1.5  # Term frequency saturation
     bm25_b: float = 0.75  # Length normalization
     default_retrieval_method: Literal["hybrid", "faiss", "bm25"] = "hybrid"
@@ -130,6 +130,9 @@ class Settings(BaseSettings):
     jwt_secret_key:     str  = "change-me-in-production"
     jwt_algorithm:      str  = "HS256"
     jwt_expire_minutes: int  = 60
+    # Demo credentials — loaded from .env so they are never committed to source control
+    auth_admin_password: str = "changeme"        # override in .env: AUTH_ADMIN_PASSWORD=...
+    auth_user_password:  str = "changeme"        # override in .env: AUTH_USER_PASSWORD=...
 
     # Cloud LLM providers (Phase 10) — set keys to activate
     openai_api_key:            str = ""
@@ -203,6 +206,14 @@ class Settings(BaseSettings):
     log_backup_count: int = 5
     log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
+    # Rate Limiting (Phase 15)
+    rate_limit_enabled:     bool = True    # set False to disable all per-IP limits (e.g. dev/test)
+    rate_limit_chat:        str  = "20/minute"   # POST /api/v1/chat
+    rate_limit_stream:      str  = "10/minute"   # POST /api/v1/chat/stream
+    rate_limit_direct:      str  = "30/minute"   # POST /api/v1/chat/direct
+    rate_limit_agent:       str  = "10/minute"   # POST /api/v1/agent/chat
+    rate_limit_multi_agent: str  = "5/minute"    # POST /api/v1/multi-agent/chat
+
     # CORS
     cors_origins: list[str] = ["http://localhost:8501", "http://localhost:3000"]
     cors_allow_credentials: bool = True

@@ -4,7 +4,7 @@ Handles conversational interactions with document context.
 """
 
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 import uuid
 from datetime import datetime
@@ -23,18 +23,32 @@ from backend.query_understanding.query_processor import QueryUnderstandingOption
 from backend.memory.conversation_manager import conversation_manager
 from backend.guardrails.pipeline import GuardrailsPipeline
 from backend.core.logging import get_logger
+from backend.core.settings import settings
+from backend.api.middleware.rate_limit import limiter
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
-# Initialize RAG chain and guardrails pipeline
-rag_chain  = RAGChain()
-_guardrails = GuardrailsPipeline()
+
+# ── F-10: Lazy singletons via cached factory functions ───────────────────
+# Previously instantiated at module import time — prevented mocking in tests
+# and crashed startup when FAISS index was missing.
+
+from functools import lru_cache  # noqa: E402
+
+@lru_cache(maxsize=1)
+def _get_rag_chain() -> RAGChain:
+    return RAGChain()
+
+@lru_cache(maxsize=1)
+def _get_guardrails() -> GuardrailsPipeline:
+    return GuardrailsPipeline()
 
 
+@limiter.limit(settings.rate_limit_chat)
 @router.post("", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: Request, body: ChatRequest):
     """
     Generate a chat response with optional RAG.
 
@@ -43,17 +57,18 @@ async def chat(request: ChatRequest):
     (Phase 6) if no explicit history is supplied in the request.
 
     Args:
-        request: Chat request with message and parameters
+        request: Starlette Request (used by rate limiter)
+        body: Chat request with message and parameters
 
     Returns:
         Chat response with answer and sources
     """
     try:
         # Generate conversation ID if not provided
-        conversation_id = request.conversation_id or f"conv_{uuid.uuid4().hex[:12]}"
+        conversation_id = body.conversation_id or f"conv_{uuid.uuid4().hex[:12]}"
 
         # Phase 7: input guardrails (injection, toxicity, PII)
-        input_guard = await _guardrails.check_input(request.message)
+        input_guard = await _get_guardrails().check_input(body.message)
         if input_guard.blocked:
             raise HTTPException(
                 status_code=400,
@@ -65,14 +80,14 @@ async def chat(request: ChatRequest):
             )
 
         # Use redacted text if PII was found in input (warn-only mode)
-        effective_message = input_guard.redacted_text or request.message
+        effective_message = input_guard.redacted_text or body.message
 
         # Phase 6: load persisted history when client doesn't send it
         history_dicts = None
-        if request.history:
+        if body.history:
             history_dicts = [
                 {"role": msg.role, "content": msg.content}
-                for msg in request.history
+                for msg in body.history
             ]
         else:
             # Load from Redis/in-process memory
@@ -82,25 +97,25 @@ async def chat(request: ChatRequest):
 
         # Build query understanding options if provided in the request
         qu_options = None
-        if request.query_understanding is not None:
+        if body.query_understanding is not None:
             qu_options = QUOptions(
-                enable_reformulation=request.query_understanding.enable_reformulation,
-                enable_expansion=request.query_understanding.enable_expansion,
-                enable_hyde=request.query_understanding.enable_hyde,
-                num_expansions=request.query_understanding.num_expansions
+                enable_reformulation=body.query_understanding.enable_reformulation,
+                enable_expansion=body.query_understanding.enable_expansion,
+                enable_hyde=body.query_understanding.enable_hyde,
+                num_expansions=body.query_understanding.num_expansions
             )
 
         # Generate response using RAG
-        result = await rag_chain.generate_response(
+        result = await _get_rag_chain().generate_response(
             query=effective_message,
-            top_k=request.top_k,
-            document_ids=request.document_ids,
+            top_k=body.top_k,
+            document_ids=body.document_ids,
             conversation_history=history_dicts,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
-            retrieval_method=request.retrieval_method,
+            temperature=body.temperature,
+            max_tokens=body.max_tokens,
+            retrieval_method=body.retrieval_method,
             query_understanding_options=qu_options,
-            use_reranking=request.use_reranking
+            use_reranking=body.use_reranking
         )
         
         # Format sources with proper defaults
@@ -122,7 +137,7 @@ async def chat(request: ChatRequest):
         
         # Phase 7: output guardrails (hallucination, PII in output)
         context_texts = [s.get("content", "") for s in result.get("sources", [])]
-        output_guard  = await _guardrails.check_output(result["response"], context_texts)
+        output_guard  = await _get_guardrails().check_output(result["response"], context_texts)
 
         final_answer = result["response"]
         guardrail_warnings = [c.to_dict() for c in output_guard.warnings]
@@ -153,7 +168,7 @@ async def chat(request: ChatRequest):
         raw_qm = result.get("query_metadata")
         if raw_qm:
             query_metadata = QueryMetadata(
-                original_query=raw_qm.get("original_query", request.message),
+                original_query=raw_qm.get("original_query", body.message),
                 reformulated_query=raw_qm.get("reformulated_query"),
                 expanded_queries=raw_qm.get("expanded_queries", []),
                 hyde_answer=raw_qm.get("hyde_answer"),
@@ -164,7 +179,7 @@ async def chat(request: ChatRequest):
         # Phase 6: persist this turn to memory (use original message, final answer)
         await conversation_manager.record_turn(
             conversation_id,
-            request.message,
+            body.message,
             final_answer,
         )
 
@@ -188,6 +203,8 @@ async def chat(request: ChatRequest):
 
         return resp
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Chat request failed: {e}")
         raise HTTPException(
@@ -196,15 +213,17 @@ async def chat(request: ChatRequest):
         )
 
 
+@limiter.limit(settings.rate_limit_stream)
 @router.post("/stream")
-async def chat_stream(request: StreamChatRequest):
+async def chat_stream(request: Request, body: StreamChatRequest):
     """
     Generate a streaming chat response with RAG.
     
     Streams tokens as they are generated for better UX.
     
     Args:
-        request: Streaming chat request
+        request: Starlette Request (used by rate limiter)
+        body: Streaming chat request
         
     Returns:
         Server-sent events stream
@@ -214,14 +233,14 @@ async def chat_stream(request: StreamChatRequest):
             """Generate streaming response."""
             try:
                 # Stream response from RAG chain
-                async for chunk in rag_chain.generate_response_stream(
-                    query=request.message,
-                    top_k=request.top_k,
+                async for chunk in _get_rag_chain().generate_response_stream(
+                    query=body.message,
+                    top_k=body.top_k,
                     document_ids=None,
                     conversation_history=None,
-                    temperature=request.temperature,
-                    max_tokens=request.max_tokens,
-                    retrieval_method=request.retrieval_method
+                    temperature=body.temperature,
+                    max_tokens=body.max_tokens,
+                    retrieval_method=body.retrieval_method
                 ):
                     # Format chunk as SSE
                     if chunk.get("type") == "token":
@@ -251,8 +270,10 @@ async def chat_stream(request: StreamChatRequest):
         )
 
 
+@limiter.limit(settings.rate_limit_direct)
 @router.post("/direct")
 async def chat_direct(
+    request: Request,
     message: str,
     temperature: float = 0.7,
     max_tokens: int = 500
@@ -271,7 +292,7 @@ async def chat_direct(
         Direct LLM response
     """
     try:
-        result = await rag_chain.answer_question(
+        result = await _get_rag_chain().answer_question(
             question=message,
             use_rag=False,
             temperature=temperature,
@@ -302,10 +323,11 @@ async def chat_health():
     """
     try:
         # Check if LLM service is available
-        llm_available = rag_chain.llm_service.client is not None
+        chain = _get_rag_chain()
+        llm_available = chain.llm_service.client is not None
         
         # Get retriever stats
-        retriever_stats = rag_chain.retriever.get_stats()
+        retriever_stats = chain.retriever.get_stats()
         
         return {
             "status": "healthy" if llm_available else "degraded",

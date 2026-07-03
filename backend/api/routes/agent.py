@@ -16,14 +16,15 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from backend.agents.graph import AgentGraph
-from backend.llm.llm_service import LLMService
+from backend.llm.llm_service import LLMService, get_llm_service
 from backend.retrievers.hybrid_retriever import HybridRetriever
 from backend.core.settings import settings
 from backend.core.logging import get_logger
+from backend.api.middleware.rate_limit import limiter
 
 logger = get_logger(__name__)
 
@@ -36,7 +37,7 @@ _graph: Optional[AgentGraph] = None
 def _get_graph() -> AgentGraph:
     global _graph
     if _graph is None:
-        llm       = LLMService()
+        llm       = get_llm_service()
         retriever = HybridRetriever()
         _graph    = AgentGraph(llm=llm, retriever=retriever)
         logger.info("AgentGraph singleton created")
@@ -94,8 +95,9 @@ class AgentChatResponse(BaseModel):
 
 # ── Endpoint ──────────────────────────────────────────────────────────────
 
+@limiter.limit(settings.rate_limit_agent)
 @router.post("/chat", response_model=AgentChatResponse)
-async def agent_chat(request: AgentChatRequest) -> AgentChatResponse:
+async def agent_chat(request: Request, body: AgentChatRequest) -> AgentChatResponse:
     """
     Agentic RAG chat.
 
@@ -105,7 +107,7 @@ async def agent_chat(request: AgentChatRequest) -> AgentChatResponse:
     """
     import time
 
-    conversation_id = request.conversation_id or f"agent_{uuid.uuid4().hex[:12]}"
+    conversation_id = body.conversation_id or f"agent_{uuid.uuid4().hex[:12]}"
     start = time.time()
 
     try:
@@ -113,19 +115,19 @@ async def agent_chat(request: AgentChatRequest) -> AgentChatResponse:
 
         # Build initial state
         initial_state: Dict[str, Any] = {
-            "query":                request.message,
-            "top_k":               request.top_k,
-            "temperature":         request.temperature,
-            "max_tokens":          request.max_tokens,
-            "use_reranking":       request.use_reranking if request.use_reranking is not None
+            "query":                body.message,
+            "top_k":               body.top_k,
+            "temperature":         body.temperature,
+            "max_tokens":          body.max_tokens,
+            "use_reranking":       body.use_reranking if body.use_reranking is not None
                                    else settings.enable_reranking,
-            "conversation_history": request.conversation_history or [],
+            "conversation_history": body.conversation_history or [],
             "trace":               [],
         }
 
         # Honour an explicit retrieval method override if provided
-        if request.retrieval_method:
-            initial_state["retrieval_method"] = request.retrieval_method
+        if body.retrieval_method:
+            initial_state["retrieval_method"] = body.retrieval_method
 
         final_state = await graph.run(initial_state)
 

@@ -241,7 +241,121 @@ class FAISSVectorStore:
                 logger.info(f"Marked vector {vector_id} as deleted")
                 return True
         return False
-    
+
+    def delete_by_document_id(self, document_id: str) -> int:
+        """
+        Delete all vectors belonging to a document.
+
+        FAISS does not support true in-place deletion; chunks are soft-deleted
+        by replacing their metadata entry with ``{"deleted": True}`` and
+        removing the ID→index mapping so they are never returned by search().
+        The FAISS index itself is rebuilt (compacted) after deletion so that
+        subsequent index saves stay lean.
+
+        Args:
+            document_id: The document_id whose chunks should be removed.
+
+        Returns:
+            Number of vectors soft-deleted.
+        """
+        # Collect all chunk IDs that belong to this document
+        ids_to_remove = [
+            vid
+            for vid, idx in self.id_to_index.items()
+            if idx < len(self.metadata_store)
+            and self.metadata_store[idx].get("document_id") == document_id
+        ]
+
+        if not ids_to_remove:
+            logger.info(f"No vectors found for document_id={document_id}")
+            return 0
+
+        for vid in ids_to_remove:
+            idx = self.id_to_index[vid]
+            self.metadata_store[idx] = {"deleted": True}
+            del self.id_to_index[vid]
+
+        logger.info(
+            f"Soft-deleted {len(ids_to_remove)} vectors for document_id={document_id}"
+        )
+
+        # Compact immediately after deletion so the on-disk index stays lean
+        self.compact()
+
+        return len(ids_to_remove)
+
+    def compact(self) -> int:
+        """
+        Rebuild the FAISS index to physically remove soft-deleted vectors.
+
+        FAISS ``IndexFlatL2`` stores every added vector forever; soft-deletion
+        only hides entries in ``metadata_store``.  Over time the index grows
+        unboundedly and wastes RAM / disk.  This method:
+
+        1. Collects all live (non-deleted) metadata entries and their original
+           positions in ``metadata_store``.
+        2. Reconstructs the corresponding float vectors from the FAISS index
+           using ``index.reconstruct()``.
+        3. Rebuilds a fresh index containing only the live vectors.
+        4. Re-maps ``id_to_index`` to the new positions.
+
+        Returns:
+            Number of vectors in the compacted index (live count).
+        """
+        # IndexFlatL2 supports reconstruct(); other types may not — fall back
+        # to a no-op rebuild (keeps same index) rather than raising.
+        if not hasattr(self.index, "reconstruct"):
+            logger.warning(
+                "compact(): index type %s does not support reconstruct() — skipping",
+                self.index_type,
+            )
+            return self.index.ntotal
+
+        # Gather live entries
+        live_vectors: list = []
+        live_metadata: list = []
+        live_ids: list = []          # (chunk_id, new_position) pairs built below
+
+        # id_to_index maps chunk_id → old FAISS position
+        old_idx_to_id: Dict[int, str] = {v: k for k, v in self.id_to_index.items()}
+
+        for old_pos, meta in enumerate(self.metadata_store):
+            if meta.get("deleted"):
+                continue
+            try:
+                vec = self.index.reconstruct(old_pos)
+            except Exception:
+                # Reconstruction failed (e.g. position was never really added)
+                continue
+            live_vectors.append(vec)
+            live_metadata.append(meta)
+            chunk_id = old_idx_to_id.get(old_pos)
+            live_ids.append((chunk_id, len(live_vectors) - 1))
+
+        total_before = self.index.ntotal
+        deleted_count = total_before - len(live_vectors)
+
+        # Rebuild
+        new_index = self._create_index()
+        new_id_to_index: Dict[str, int] = {}
+
+        if live_vectors:
+            vecs_array = np.vstack(live_vectors).astype(np.float32)
+            new_index.add(vecs_array)
+            for chunk_id, new_pos in live_ids:
+                if chunk_id is not None:
+                    new_id_to_index[chunk_id] = new_pos
+
+        self.index = new_index
+        self.metadata_store = live_metadata
+        self.id_to_index = new_id_to_index
+
+        logger.info(
+            f"compact(): removed {deleted_count} soft-deleted vectors; "
+            f"index now has {new_index.ntotal} live vectors"
+        )
+        return new_index.ntotal
+
     def save(self):
         """Save index and metadata to disk."""
         try:

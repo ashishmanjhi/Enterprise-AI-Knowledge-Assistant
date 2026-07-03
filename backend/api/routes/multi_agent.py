@@ -11,14 +11,15 @@ import uuid, time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from backend.agents.multi.orchestrator import MultiAgentOrchestrator
-from backend.llm.llm_service import LLMService
+from backend.llm.llm_service import LLMService, get_llm_service
 from backend.retrievers.hybrid_retriever import HybridRetriever
 from backend.core.settings import settings
 from backend.core.logging import get_logger
+from backend.api.middleware.rate_limit import limiter
 
 logger = get_logger(__name__)
 
@@ -31,7 +32,7 @@ _orchestrator: Optional[MultiAgentOrchestrator] = None
 def _get_orchestrator() -> MultiAgentOrchestrator:
     global _orchestrator
     if _orchestrator is None:
-        llm       = LLMService()
+        llm       = get_llm_service()
         retriever = HybridRetriever()
         _orchestrator = MultiAgentOrchestrator(llm=llm, retriever=retriever)
         logger.info("MultiAgentOrchestrator singleton created")
@@ -78,24 +79,25 @@ class MultiAgentResponse(BaseModel):
 
 # ── Endpoint ──────────────────────────────────────────────────────────────
 
+@limiter.limit(settings.rate_limit_multi_agent)
 @router.post("/chat", response_model=MultiAgentResponse)
-async def multi_agent_chat(request: MultiAgentRequest) -> MultiAgentResponse:
+async def multi_agent_chat(request: Request, body: MultiAgentRequest) -> MultiAgentResponse:
     """
     Run the full multi-agent pipeline:
     classify → (research | retrieval) → knowledge → evaluation → governance → generate
     """
-    conversation_id = request.conversation_id or f"ma_{uuid.uuid4().hex[:12]}"
+    conversation_id = body.conversation_id or f"ma_{uuid.uuid4().hex[:12]}"
     start = time.time()
 
     try:
         orch = _get_orchestrator()
 
         initial_state: Dict[str, Any] = {
-            "query":                request.message,
-            "top_k":               request.top_k,
-            "temperature":         request.temperature,
-            "max_tokens":          request.max_tokens,
-            "conversation_history": request.conversation_history or [],
+            "query":                body.message,
+            "top_k":               body.top_k,
+            "temperature":         body.temperature,
+            "max_tokens":          body.max_tokens,
+            "conversation_history": body.conversation_history or [],
             "trace":               [],
         }
 

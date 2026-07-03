@@ -3,6 +3,8 @@ Embedding service using sentence-transformers.
 Generates vector embeddings for text chunks using BAAI/bge-small-en-v1.5.
 """
 
+import asyncio
+from functools import partial
 from typing import List, Union
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -85,20 +87,25 @@ class EmbeddingService:
         
         try:
             logger.info(f"Generating embeddings for {len(texts)} texts")
-            
-            # Generate embeddings
-            embeddings = self.model.encode(
-                texts,
-                batch_size=self.batch_size,
-                show_progress_bar=show_progress,
-                convert_to_numpy=True,
-                normalize_embeddings=normalize
+
+            # Run CPU-bound encode() in a thread pool to avoid blocking the event loop
+            loop = asyncio.get_event_loop()
+            embeddings = await loop.run_in_executor(
+                None,
+                partial(
+                    self.model.encode,
+                    texts,
+                    batch_size=self.batch_size,
+                    show_progress_bar=show_progress,
+                    convert_to_numpy=True,
+                    normalize_embeddings=normalize,
+                ),
             )
-            
+
             logger.info(
                 f"Generated embeddings with shape: {embeddings.shape}"
             )
-            
+
             return embeddings
             
         except Exception as e:
@@ -125,14 +132,18 @@ class EmbeddingService:
             return np.zeros(self.dimension)
         
         try:
-            # Generate embedding
-            embedding = self.model.encode(
-                [text],
-                convert_to_numpy=True,
-                normalize_embeddings=normalize
-            )[0]
-            
-            return embedding
+            # Run CPU-bound encode() in a thread pool to avoid blocking the event loop
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                None,
+                partial(
+                    self.model.encode,
+                    [text],
+                    convert_to_numpy=True,
+                    normalize_embeddings=normalize,
+                ),
+            )
+            return result[0]
             
         except Exception as e:
             logger.error(f"Failed to generate query embedding: {e}")
