@@ -3,7 +3,7 @@ Admin API routes for system management.
 Includes operations like clearing vector stores.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pathlib import Path
 
 from backend.core.settings import settings
@@ -16,8 +16,28 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
+# ── F-03: Admin role guard ────────────────────────────────────────────────
+
+def require_admin(request: Request) -> None:
+    """
+    Enforce admin role when auth is enabled.
+
+    When auth_enabled=False (development default) this is a no-op so the
+    existing dev workflow is unaffected.  When auth_enabled=True every admin
+    endpoint requires a JWT with role="admin".
+    """
+    if not settings.auth_enabled:
+        return
+    payload = getattr(request.state, "jwt_payload", {})
+    if payload.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin role required. Obtain a token with role='admin' via POST /auth/token.",
+        )
+
+
 @router.post("/clear-vector-stores")
-async def clear_vector_stores():
+async def clear_vector_stores(_: None = Depends(require_admin)):
     """
     Clear all vector stores (FAISS and BM25).
     
@@ -91,7 +111,7 @@ async def clear_vector_stores():
 
 
 @router.get("/system-info")
-async def get_system_info():
+async def get_system_info(_: None = Depends(require_admin)):
     """
     Get system information including vector store status.
     

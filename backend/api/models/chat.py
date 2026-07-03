@@ -4,7 +4,7 @@ Pydantic models for chat API endpoints.
 
 from typing import Optional, List, Dict, Any, Literal
 from datetime import datetime
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ChatMessage(BaseModel):
@@ -14,8 +14,9 @@ class ChatMessage(BaseModel):
     content: str = Field(..., description="Message content")
     timestamp: Optional[datetime] = Field(None, description="Message timestamp")
     
-    @validator('role')
-    def validate_role(cls, v):
+    @field_validator('role', mode='before')
+    @classmethod
+    def validate_role(cls, v: str) -> str:
         """Validate message role."""
         allowed_roles = ['user', 'assistant', 'system']
         if v.lower() not in allowed_roles:
@@ -148,7 +149,8 @@ class ChatRequest(BaseModel):
     temperature: float = Field(0.7, description="Generation temperature", ge=0.0, le=2.0)
     max_tokens: int = Field(500, description="Maximum tokens in response", ge=50, le=2000)
     
-    @validator('history')
+    @field_validator('history', mode='before')
+    @classmethod
     def validate_history(cls, v):
         """Validate conversation history."""
         if v and len(v) > 20:

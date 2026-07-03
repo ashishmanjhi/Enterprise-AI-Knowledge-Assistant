@@ -170,7 +170,29 @@ class ConversationManager:
             return None
 
 
-# Module-level singleton (LLM injected lazily at first use via chat route)
-conversation_manager = ConversationManager()
+# ── Module-level singleton with lazy LLM injection (F-07) ──────────────
+# Previously instantiated with no LLM, so summarisation was silently disabled.
+# Now creates the LLM on first call so memory_enable_summarisation actually works.
+
+_conversation_manager: Optional[ConversationManager] = None
+
+
+def get_conversation_manager() -> ConversationManager:
+    """Return (or lazily create) the module-level ConversationManager singleton.
+
+    The LLMService is imported and instantiated on first call — not at module
+    import time — so startup is unaffected when Ollama is unavailable.
+    """
+    global _conversation_manager
+    if _conversation_manager is None:
+        from backend.llm.llm_service import LLMService
+        _conversation_manager = ConversationManager(llm_service=LLMService())
+    return _conversation_manager
+
+
+# Backward-compatible alias — all existing ``from backend.memory.conversation_manager
+# import conversation_manager`` imports continue to work because the name resolves
+# to the lazily-created singleton on first attribute access via the module.
+conversation_manager = get_conversation_manager()
 
 # Made with Bob

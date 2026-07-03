@@ -5,6 +5,7 @@ Uses Reciprocal Rank Fusion to merge results from both retrievers.
 
 from typing import List, Dict, Any, Optional, Literal
 import asyncio
+import functools
 import time
 from backend.retrievers.retriever import DocumentRetriever, RetrievalResult
 from backend.retrievers.bm25_retriever import BM25Retriever, BM25RetrievalResult
@@ -214,10 +215,17 @@ class HybridRetriever:
         min_score: float
     ) -> List[HybridRetrievalResult]:
         """Retrieve using BM25 only."""
-        bm25_results = self.bm25_retriever.search(
-            query=query,
-            top_k=top_k,
-            min_score=min_score
+        # F-06b: BM25 search is CPU-bound synchronous — offload to thread pool
+        # to avoid blocking the async event loop (same fix applied in _retrieve_hybrid).
+        loop = asyncio.get_event_loop()
+        bm25_results = await loop.run_in_executor(
+            None,
+            functools.partial(
+                self.bm25_retriever.search,
+                query=query,
+                top_k=top_k,
+                min_score=min_score,
+            ),
         )
         
         # Convert to hybrid results
@@ -259,12 +267,19 @@ class HybridRetriever:
             min_score=0.0  # Apply threshold after fusion
         )
         
-        # BM25 search is synchronous, wrap in async
+        # F-06: BM25 search is CPU-bound synchronous — offload to thread pool
+        # to avoid blocking the async event loop under concurrent load.
+        loop = asyncio.get_event_loop()
+
         async def bm25_search():
-            return self.bm25_retriever.search(
-                query=query,
-                top_k=retrieval_k,
-                min_score=0.0
+            return await loop.run_in_executor(
+                None,
+                functools.partial(
+                    self.bm25_retriever.search,
+                    query=query,
+                    top_k=retrieval_k,
+                    min_score=0.0,
+                ),
             )
         
         # Run both retrievals in parallel

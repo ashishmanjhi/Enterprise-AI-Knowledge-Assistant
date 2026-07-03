@@ -1,0 +1,1287 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Enterprise Agentic RAG Platform — Technical Documentation</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #1f2328;
+    background: #ffffff;
+  }
+  .page { max-width: 900px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  /* NAV */
+  .toc { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 20px 24px; margin-bottom: 40px; }
+  .toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: #57606a; margin-bottom: 12px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 3px 0; }
+  .toc a { color: #3b82d4; text-decoration: none; font-size: 13px; }
+  .toc a:hover { text-decoration: underline; }
+  .toc-group { margin-top: 8px; }
+  .toc-group-title { font-weight: 600; font-size: 13px; color: #1f2328; margin-bottom: 4px; list-style: none; }
+
+  /* HEADINGS */
+  h1 { font-size: 26px; font-weight: 700; color: #1f2328; margin-bottom: 6px; }
+  h2 { font-size: 20px; font-weight: 700; color: #1f2328; margin-top: 48px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; }
+  h3 { font-size: 16px; font-weight: 600; color: #1f2328; margin-top: 28px; margin-bottom: 10px; }
+  h4 { font-size: 14px; font-weight: 600; color: #1f2328; margin-top: 20px; margin-bottom: 8px; }
+  .subtitle { color: #57606a; font-size: 15px; margin-bottom: 32px; }
+
+  /* PROSE */
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 10px 0 14px 22px; }
+  li { margin: 4px 0; }
+  strong { font-weight: 600; }
+  em { font-style: italic; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 32px 0; }
+
+  /* CODE */
+  code { font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; font-size: 12.5px; background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 3px; padding: 1px 5px; color: #1f2328; }
+  pre { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; overflow-x: auto; margin: 14px 0 18px; }
+  pre code { background: none; border: none; padding: 0; font-size: 12px; }
+
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 22px; font-size: 13px; }
+  th { background: #f7f8fa; border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; font-weight: 600; color: #1f2328; }
+  td { border: 1px solid #e5e7eb; padding: 8px 12px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafbfc; }
+
+  /* CALLOUTS */
+  .callout { border-left: 4px solid #3b82d4; background: #f0f6ff; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0; }
+  .callout.warn { border-left-color: #d97706; background: #fffbeb; }
+  .callout.danger { border-left-color: #dc2626; background: #fff5f5; }
+  .callout.success { border-left-color: #16a34a; background: #f0fdf4; }
+  .callout p { margin-bottom: 0; }
+  .callout-title { font-weight: 700; margin-bottom: 4px; font-size: 13px; }
+
+  /* BADGES */
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 12px; vertical-align: middle; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-red { background: #fee2e2; color: #b91c1c; }
+  .badge-yellow { background: #fef3c7; color: #92400e; }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+  .badge-gray { background: #f3f4f6; color: #374151; }
+
+  /* PHASE PILLS */
+  .phase { font-size: 11px; font-weight: 700; background: #ede9fe; color: #5b21b6; padding: 2px 8px; border-radius: 10px; margin-right: 6px; }
+
+  /* DIAGRAMS */
+  .diagram { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 20px; margin: 16px 0; font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; line-height: 1.6; white-space: pre; overflow-x: auto; }
+
+  /* SECTION ANCHOR */
+  .section-anchor { display: block; height: 0; }
+
+  /* REVIEW ITEMS */
+  .review-item { border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 16px; margin: 10px 0; }
+  .review-item.strength { border-left: 4px solid #16a34a; }
+  .review-item.weakness { border-left: 4px solid #dc2626; }
+  .review-item.risk { border-left: 4px solid #d97706; }
+  .review-item.rec { border-left: 4px solid #3b82d4; }
+  .review-item h4 { margin-top: 0; margin-bottom: 6px; font-size: 13.5px; }
+  .complexity { font-size: 11px; font-weight: 600; }
+  .complexity-low { color: #15803d; }
+  .complexity-med { color: #92400e; }
+  .complexity-high { color: #b91c1c; }
+
+  /* SCORE CARD */
+  .scorecard { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 20px 0; }
+  .scorecard-item { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px; text-align: center; }
+  .scorecard-item .score { font-size: 28px; font-weight: 700; }
+  .scorecard-item .label { font-size: 12px; color: #57606a; margin-top: 4px; }
+  .score-a { color: #15803d; }
+  .score-b { color: #2563eb; }
+  .score-c { color: #92400e; }
+
+  /* FOOTER */
+  .doc-footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #57606a; }
+</style>
+</head>
+<body>
+<div class="page">
+
+
+<h1>Enterprise Agentic RAG Platform</h1>
+<p class="subtitle">Comprehensive Technical Documentation — Phases 0–15 — v15.0.0</p>
+
+<div class="callout success">
+  <p class="callout-title">Document Scope</p>
+  <p>This document is written for a senior engineer or architect joining the project cold. It covers every module, agent, API, workflow, and configuration file in the codebase, with honest assessment of strengths, weaknesses, risks, and recommended improvements.</p>
+</div>
+
+
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#exec-summary">Executive Summary</a></li>
+    <li><a href="#architecture">System Architecture</a></li>
+    <li><a href="#project-structure">Project Structure</a></li>
+    <li><a href="#core">Core Infrastructure</a></li>
+    <li><a href="#providers">LLM Provider Layer</a></li>
+    <li><a href="#ingestion">Document Ingestion Pipeline</a></li>
+    <li><a href="#retrieval">Retrieval Layer</a></li>
+    <li><a href="#query-understanding">Query Understanding</a></li>
+    <li><a href="#reranking">Reranking</a></li>
+    <li><a href="#rag-chain">RAG Chain</a></li>
+    <li><a href="#memory">Conversational Memory</a></li>
+    <li><a href="#guardrails">Guardrails &amp; Safety</a></li>
+    <li><a href="#agents">Agentic RAG (LangGraph)</a></li>
+    <li><a href="#multi-agent">Multi-Agent Ecosystem</a></li>
+    <li><a href="#knowledge-graph">Knowledge Graph</a></li>
+    <li><a href="#evaluators">Evaluation Framework</a></li>
+    <li><a href="#api">API Layer</a></li>
+    <li><a href="#frontend">Frontend (Streamlit)</a></li>
+    <li><a href="#config-guide">Configuration Guide</a></li>
+    <li><a href="#data-flow">Data Flow &amp; Request Lifecycle</a></li>
+    <li><a href="#security">Security</a></li>
+    <li><a href="#testing">Testing</a></li>
+    <li><a href="#code-review">Code Review</a></li>
+    <li><a href="#strengths">Strengths</a></li>
+    <li><a href="#weaknesses">Weaknesses</a></li>
+    <li><a href="#missing-features">Missing Features</a></li>
+    <li><a href="#risks">Issues &amp; Risks</a></li>
+    <li><a href="#recommendations">Recommendations</a></li>
+    <li><a href="#assessment">Project Assessment</a></li>
+    <li><a href="#roadmap">Future Roadmap</a></li>
+  </ol>
+</div>
+
+
+<span class="section-anchor" id="exec-summary"></span>
+<h2>1. Executive Summary</h2>
+
+<p>The <strong>Enterprise Agentic RAG Platform</strong> is a fully local, CPU-capable Retrieval-Augmented Generation system built in Python over 15 incremental development phases. It ingests PDF and DOCX documents, indexes them in a hybrid vector+keyword store, and answers natural-language questions with provenance citations.</p>
+
+<p>Beyond basic RAG, the platform adds:</p>
+<ul>
+  <li><strong>Agentic reasoning</strong> via a LangGraph state machine that routes, rewrites, grades, generates, and verifies answers</li>
+  <li><strong>Five specialised sub-agents</strong> orchestrated by a top-level router for complex research tasks</li>
+  <li><strong>A knowledge graph</strong> (NetworkX) for entity/relation-enriched retrieval</li>
+  <li><strong>Safety guardrails</strong> (injection, PII, toxicity, hallucination) running on every request/response</li>
+  <li><strong>Multi-provider LLM support</strong> for Ollama (local), OpenAI, Anthropic, Gemini, and Azure</li>
+  <li><strong>Multi-modal PDF understanding</strong> via llava:7b for chart/image descriptions</li>
+</ul>
+
+<div class="scorecard">
+  <div class="scorecard-item"><div class="score score-a">A</div><div class="label">Feature Breadth</div></div>
+  <div class="scorecard-item"><div class="score score-b">B+</div><div class="label">Architecture Quality</div></div>
+  <div class="scorecard-item"><div class="score score-b">B</div><div class="label">Production Readiness</div></div>
+  <div class="scorecard-item"><div class="score score-b">B</div><div class="label">Code Quality</div></div>
+  <div class="scorecard-item"><div class="score score-b">B</div><div class="label">Test Coverage</div></div>
+  <div class="scorecard-item"><div class="score score-b">B-</div><div class="label">Observability</div></div>
+</div>
+
+<p>The codebase is impressively complete for a solo or small-team research/enterprise prototype. Phase 15 addressed the remaining P0 and P1 production gaps: <strong>per-IP rate limiting</strong> on all 5 LLM endpoints (slowapi), <strong>async embedding</strong> via <code>run_in_executor</code>, <strong>FAISS index compaction</strong> on document deletion, and a <strong>shared LLM factory</strong> to eliminate duplicate httpx clients. Combined with the F-01–F-10 bug fixes, Alembic migration, and 203 passing route tests, the platform is now substantially more production-ready. Remaining primary gaps are: shallow test coverage on the agent/KG paths, no agent streaming, and the ingestion pipeline is not yet fully wired to persist metadata to Postgres.</p>
+
+
+<span class="section-anchor" id="architecture"></span>
+<h2>2. System Architecture</h2>
+
+<h3>High-Level Architecture</h3>
+<div class="diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                    STREAMLIT FRONTEND (port 8501)               │
+│  Home │ Documents │ Chat │ Evaluate │ Agent │ Multi-Agent │ KG  │
+└────────────────────────┬────────────────────────────────────────┘
+                         │ HTTP REST + SSE
+┌────────────────────────▼────────────────────────────────────────┐
+│               FASTAPI BACKEND (port 8000)                       │
+│  SlowAPIMiddleware → JWTAuthMiddleware → CORSMiddleware → Router │
+│                                                                 │
+│  /api/v1/                                                       │
+│    chat  documents  agent  multi-agent  kg  evaluate            │
+│    memory  guardrails  feedback  auth  admin  status  health    │
+└──┬──────────────┬────────────┬──────────┬───────────┬───────────┘
+   │              │            │          │           │
+   ▼              ▼            ▼          ▼           ▼
+RAGChain    AgentGraph   MultiAgent  KnowledgeGraph  Guardrails
+   │         (LangGraph)  Orchestrator   GraphStore   Pipeline
+   │              │       (LangGraph)       │
+   ▼              └────────────┬────────────┘
+HybridRetriever◄───────────────┘
+   ├─ FAISSVectorStore  (data/vectorstore/faiss_index.bin)
+   └─ BM25Retriever     (data/vectorstore/bm25_index.json)
+   
+EmbeddingService  (BAAI/bge-small-en-v1.5, 384-dim)
+LLMService        (Ollama default → cloud fallback)
+SessionMemory     (Redis ← in-process dict fallback)
+</div>
+
+<h3>Technology Stack</h3>
+<table>
+  <tr><th>Layer</th><th>Technology</th><th>Version</th><th>Purpose</th></tr>
+  <tr><td>API</td><td>FastAPI + Uvicorn</td><td>0.109 / 0.27</td><td>REST API server</td></tr>
+  <tr><td>Agent</td><td>LangGraph (StateGraph)</td><td>0.1.19</td><td>Agentic orchestration</td></tr>
+  <tr><td>Frontend</td><td>Streamlit</td><td>1.30</td><td>Web UI</td></tr>
+  <tr><td>LLM (local)</td><td>Ollama</td><td>0.1.6</td><td>qwen3:4b, llava:7b</td></tr>
+  <tr><td>Embeddings</td><td>sentence-transformers</td><td>2.3.1</td><td>BAAI/bge-small-en-v1.5 384-dim</td></tr>
+  <tr><td>Vector store</td><td>FAISS (faiss-cpu)</td><td>1.7.4</td><td>Dense ANN search</td></tr>
+  <tr><td>Keyword search</td><td>rank-bm25</td><td>0.2.2</td><td>Sparse BM25Okapi</td></tr>
+  <tr><td>Reranker</td><td>cross-encoder/ms-marco-MiniLM-L-6-v2</td><td>sentence-transformers</td><td>Second-pass scoring</td></tr>
+  <tr><td>Graph</td><td>NetworkX MultiDiGraph</td><td>—</td><td>Knowledge graph + JSON persistence</td></tr>
+  <tr><td>PDF extraction</td><td>pdfplumber (primary) / PyPDF2 (fallback)</td><td>≥0.10 / 3.0.1</td><td>Text + table extraction</td></tr>
+  <tr><td>Vision</td><td>llava:7b via Ollama</td><td>—</td><td>Chart/image descriptions</td></tr>
+  <tr><td>Memory</td><td>Redis (redis-py)</td><td>5.0.1</td><td>Conversation history</td></tr>
+  <tr><td>Auth</td><td>PyJWT HS256</td><td>≥2.8</td><td>Bearer token auth</td></tr>
+  <tr><td>Tracing</td><td>LangSmith + OpenTelemetry</td><td>—</td><td>Optional observability</td></tr>
+  <tr><td>Evaluation</td><td>RAGAS</td><td>0.2.15</td><td>LLM-as-judge metrics</td></tr>
+  <tr><td>Deploy</td><td>Podman + Caddy</td><td>—</td><td>Container stack</td></tr>
+</table>
+
+<h3>Development Phase Timeline</h3>
+<table>
+  <tr><th>Phase</th><th>Name</th><th>Key Modules Added</th></tr>
+  <tr><td><span class="phase">0–0.5</span></td><td>Foundation</td><td>core/, providers/, llm/</td></tr>
+  <tr><td><span class="phase">1</span></td><td>Basic RAG</td><td>ingestion/, retrievers/, routes/documents.py</td></tr>
+  <tr><td><span class="phase">2</span></td><td>Hybrid Retrieval</td><td>bm25_retriever.py, hybrid_retriever.py, fusion.py</td></tr>
+  <tr><td><span class="phase">3</span></td><td>Query Understanding</td><td>query_understanding/ (expander, reformulator, HyDE)</td></tr>
+  <tr><td><span class="phase">4</span></td><td>Reranking</td><td>rerankers/cross_encoder.py</td></tr>
+  <tr><td><span class="phase">5</span></td><td>Evaluation</td><td>evaluators/ (RAGAS), routes/evaluate.py</td></tr>
+  <tr><td><span class="phase">6</span></td><td>Memory</td><td>memory/ (session_memory, conversation_manager)</td></tr>
+  <tr><td><span class="phase">7</span></td><td>Safety</td><td>guardrails/ (detectors, hallucination, pipeline)</td></tr>
+  <tr><td><span class="phase">8</span></td><td>UX</td><td>SSE streaming in chat.py, frontend updates</td></tr>
+  <tr><td><span class="phase">9</span></td><td>Agentic RAG</td><td>agents/graph.py, nodes.py, state.py</td></tr>
+  <tr><td><span class="phase">10</span></td><td>Production</td><td>security.py, tracing.py, middleware/auth.py, cloud providers</td></tr>
+  <tr><td><span class="phase">11</span></td><td>Multi-Agent</td><td>agents/multi/ (5 sub-agents + orchestrator)</td></tr>
+  <tr><td><span class="phase">12</span></td><td>Knowledge Graph</td><td>knowledge_graph/ (store, extractor, mapper, retriever)</td></tr>
+  <tr><td><span class="phase">13</span></td><td>PDF Tables + OCR</td><td>pdf_loader_v2.py, table_serializer.py, ocr_processor.py</td></tr>
+  <tr><td><span class="phase">14</span></td><td>Chart AI</td><td>chart_describer.py (llava:7b)</td></tr>
+  <tr><td><span class="phase">15</span></td><td>Production Hardening</td><td>rate_limit.py, embeddings.py (async), vector_store.py (compact), llm_service.py (factory), db/, alembic/</td></tr>
+</table>
+
+
+<span class="section-anchor" id="project-structure"></span>
+<h2>3. Project Structure</h2>
+<div class="diagram">
+Enterprise-AI-Knowledge-Assistant/
+├── backend/
+│   ├── agents/                  # LangGraph single-agent (Phase 9)
+│   │   ├── state.py             # AgentState TypedDict
+│   │   ├── nodes.py             # 6 node functions (pure async)
+│   │   ├── graph.py             # AgentGraph (compiled StateGraph)
+│   │   └── multi/               # Multi-agent ecosystem (Phase 11)
+│   │       ├── state.py         # MultiAgentState TypedDict
+│   │       ├── orchestrator.py  # Top-level LangGraph router
+│   │       ├── research_agent.py
+│   │       ├── retrieval_agent.py
+│   │       ├── knowledge_agent.py
+│   │       ├── evaluation_agent.py
+│   │       └── governance_agent.py
+│   ├── api/
+│   │   ├── main.py              # FastAPI app factory (SlowAPIMiddleware + JWTAuthMiddleware)
+│   │   ├── middleware/auth.py   # JWTAuthMiddleware (Phase 10)
+│   │   ├── middleware/rate_limit.py  # slowapi Limiter + _get_real_ip key func (Phase 15)
+│   │   ├── models/              # Pydantic schemas
+│   │   │   ├── chat.py
+│   │   │   └── documents.py
+│   │   └── routes/              # One file per feature domain
+│   │       ├── auth.py          health.py   status.py
+│   │       ├── chat.py          documents.py  admin.py
+│   │       ├── agent.py         multi_agent.py
+│   │       ├── evaluate.py      memory.py
+│   │       ├── guardrails.py    knowledge_graph.py
+│   │       ├── feedback.py      
+│   ├── core/
+│   │   ├── settings.py          # Pydantic BaseSettings (single source of truth)
+│   │   ├── logging.py           # Rotating file + console handlers
+│   │   ├── security.py          # JWT helpers
+│   │   └── tracing.py           # LangSmith + OTel setup
+│   ├── evaluators/
+│   │   ├── metrics.py           # MetricName enum, DEFAULT_METRICS
+│   │   └── ragas_evaluator.py   # RAGASEvaluator (LLM-as-judge)
+│   ├── guardrails/
+│   │   ├── detectors.py         # PromptInjection, PII, Toxicity detectors
+│   │   ├── hallucination.py     # HallucinationDetector (LLM + heuristic)
+│   │   └── pipeline.py          # GuardrailsPipeline orchestrator
+│   ├── ingestion/
+│   │   ├── loaders/
+│   │   │   ├── base.py          # BaseDocumentLoader ABC
+│   │   │   ├── pdf_loader.py    # PyPDF2 legacy loader
+│   │   │   ├── pdf_loader_v2.py # EnhancedPDFLoader (pdfplumber+OCR+charts)
+│   │   │   └── docx_loader.py
+│   │   ├── chunking.py          # DocumentChunker (RecursiveCharacterTextSplitter)
+│   │   ├── metadata.py          # DocumentMetadata, ChunkMetadata, MetadataManager
+│   │   ├── pipeline.py          # IngestionPipeline (load→chunk→embed→index)
+│   │   ├── table_serializer.py  # table_to_markdown() helper
+│   │   ├── chart_describer.py   # ChartDescriber (llava:7b, Phase 14)
+│   │   └── ocr_processor.py     # OCRProcessor (pytesseract, Phase 13)
+│   ├── knowledge_graph/
+│   │   ├── graph_store.py       # GraphStore (NetworkX + JSON persistence)
+│   │   ├── entity_extractor.py  # EntityExtractor (LLM-NER + regex fallback)
+│   │   ├── relation_mapper.py   # RelationMapper (LLM triples + heuristics)
+│   │   ├── graph_retriever.py   # GraphRetriever (entity search + ego-graph)
+│   │   └── hybrid_graph_retriever.py  # RRF fusion of vector+graph results
+│   ├── llm/
+│   │   ├── embeddings.py        # EmbeddingService (async run_in_executor — Phase 15)
+│   │   ├── llm_service.py       # LLMService + get_llm_service() factory (Phase 15)
+│   │   └── rag_chain.py         # RAGChain (linear orchestration)
+│   ├── memory/
+│   │   ├── session_memory.py    # SessionMemory (Redis + in-process fallback)
+│   │   └── conversation_manager.py  # ConversationManager (history + summarisation)
+│   ├── providers/               # Provider Abstraction Layer (Phase 0.5)
+│   │   ├── base.py              # BaseLLMProvider ABC
+│   │   ├── factory.py           # LLMFactory (dynamic selection + fallback)
+│   │   ├── ollama.py            # OllamaProvider
+│   │   ├── huggingface.py       # HuggingFaceProvider
+│   │   ├── openai.py            # OpenAIProvider (Phase 10)
+│   │   ├── anthropic.py         # AnthropicProvider (Phase 10)
+│   │   ├── gemini.py            # GeminiProvider (Phase 10)
+│   │   └── azure.py             # AzureOpenAIProvider (Phase 10)
+│   ├── query_understanding/
+│   │   ├── query_processor.py   # QueryProcessor (orchestrator)
+│   │   ├── query_expander.py    # QueryExpander (N alternative phrasings)
+│   │   ├── query_reformulator.py # QueryReformulator (clarify vague queries)
+│   │   └── hyde_generator.py    # HyDEGenerator (hypothetical document)
+│   ├── rerankers/
+│   │   └── cross_encoder.py     # CrossEncoderReranker
+│   ├── retrievers/
+│   │   ├── vector_store.py      # FAISSVectorStore + compact() (Phase 15)
+│   │   ├── vector_store_manager.py  # singleton factory
+│   │   ├── retriever.py         # DocumentRetriever (FAISS-only)
+│   │   ├── bm25_retriever.py    # BM25Retriever (JSON-serialised, async-safe)
+│   │   ├── bm25_manager.py      # singleton factory
+│   │   ├── fusion.py            # ReciprocalRankFusion
+│   │   └── hybrid_retriever.py  # HybridRetriever (FAISS+BM25+RRF)
+│   ├── db/                      # Database layer
+│   │   ├── models.py            # SQLAlchemy ORM: Document, DocumentChunk, Conversation, ConversationMessage, Feedback
+│   │   └── session.py           # Sync + async engines, get_db() FastAPI dependency
+│   └── tests/                   # Pytest test suite (203 tests)
+│       ├── conftest.py          # Shared fixtures: client, tmp_upload_dir, auth_token, minimal_pdf_bytes
+│       ├── test_api_integration.py  # Original smoke tests (13 tests)
+│       ├── test_api_routes.py   # Comprehensive route tests: auth, docs, chat, admin, OpenAPI (52 tests)
+│       ├── test_chunking.py     test_loaders.py   test_guardrails.py
+│       ├── test_memory.py       test_query_understanding.py   test_reranker.py
+├── alembic/                     # Alembic migration environment
+│   ├── env.py                   # Reads URL from settings, imports Base for autogenerate
+│   └── versions/
+│       └── 001_initial_schema.py  # CREATE TABLE for all 5 application tables
+├── alembic.ini                  # Alembic config (URL overridden by env.py at runtime)
+├── frontend/streamlit/
+│   ├── app.py                   # Home dashboard
+│   └── pages/                   # 6 feature pages
+├── data/                        # Runtime data (excluded from git)
+├── deploy/podman/               # Container compose files
+├── docs/                        # Phase implementation docs
+└── scripts/                     # Utility scripts
+</div>
+
+
+<span class="section-anchor" id="core"></span>
+<h2>4. Core Infrastructure</h2>
+
+<h3>4.1 Settings (<code>backend/core/settings.py</code>)</h3>
+<p><strong>What it is:</strong> A single <code>pydantic_settings.BaseSettings</code> subclass that is the sole source of truth for every configurable parameter across all 15 phases. It loads from environment variables and <code>.env</code> automatically.</p>
+<p><strong>Design:</strong> Fields are grouped by phase with inline comments. Type annotations enforce correctness. Properties (<code>database_url</code>, <code>redis_url</code>, <code>is_development</code>) compose derived values. A module-level <code>settings = Settings()</code> singleton is imported everywhere.</p>
+<p><strong>Notable fields:</strong></p>
+<ul>
+  <li><code>app_version = "14.0.0"</code> — bumped at each phase</li>
+  <li><code>ollama_timeout = 300</code> — raised for CPU-only qwen3 inference</li>
+  <li><code>ollama_num_ctx = 4096</code> — prevents Ollama from defaulting to a smaller window</li>
+  <li><code>think = False</code> — disables qwen3 internal reasoning tokens so all budget goes to the answer</li>
+  <li><code>auth_enabled = False</code> — JWT enforcement is opt-in</li>
+  <li>All guardrail, agent, KG, chart, and evaluation knobs</li>
+</ul>
+<div class="callout success">
+  <p class="callout-title">Fixed — F-04</p>
+  <p>The startup event handler in <code>api/main.py</code> now validates <code>jwt_secret_key</code> against the insecure default at boot time. In <code>production</code> mode it raises a hard <code>RuntimeError</code> preventing startup; in <code>development</code> mode it logs a <code>WARNING</code>. <code>db_password</code> remains a changeme default but this only affects Postgres connectivity, not auth security.</p>
+</div>
+
+<h3>4.2 Logging (<code>backend/core/logging.py</code>)</h3>
+<p>Configures a named logger (<code>rag_platform</code>) with both a rotating file handler (<code>logs/app.log</code>, 10 MB, 5 backups) and a console handler. <code>get_logger(__name__)</code> returns child loggers, giving full module-path context in log lines. All modules follow this convention — no bare <code>print()</code> calls exist in production code.</p>
+
+<h3>4.3 Tracing (<code>backend/core/tracing.py</code>)</h3>
+<p>Initialises LangSmith and OpenTelemetry at app startup. Both are opt-in via settings flags and degrade gracefully to no-ops when packages are absent or disabled. Provides <code>trace_span(name, attrs)</code> as an async context manager, and <code>langsmith_callbacks()</code> for LangGraph <code>ainvoke</code> calls. FastAPI HTTP instrumentation is added via <code>add_otel_middleware(app)</code>.</p>
+
+<h3>4.4 Security (<code>backend/core/security.py</code>)</h3>
+<p>JWT helper functions: <code>create_access_token(subject, extra_claims)</code> and <code>decode_access_token(token)</code> using PyJWT HS256. Also provides <code>generate_api_key()</code>, <code>hash_api_key()</code>, and constant-time <code>verify_api_key()</code> for API key management. The module guards against missing PyJWT with a clear runtime error.</p>
+
+<h3>4.5 Auth Middleware (<code>backend/api/middleware/auth.py</code>)</h3>
+<p><code>JWTAuthMiddleware</code> extends Starlette's <code>BaseHTTPMiddleware</code>. When <code>auth_enabled=True</code> it validates the <code>Authorization: Bearer &lt;token&gt;</code> header on every non-exempt path. Exempt paths include <code>/health</code>, <code>/docs</code>, <code>/openapi.json</code>, <code>/auth/token</code>. Decoded payload is attached to <code>request.state.jwt_payload</code> for downstream handlers. When <code>auth_enabled=False</code> (default) the middleware is a transparent pass-through.</p>
+<div class="callout success">
+  <p class="callout-title">Fixed — F-02, F-03</p>
+  <p>Auth credentials are now sourced from <code>settings.auth_admin_password</code> / <code>settings.auth_user_password</code> (loaded from <code>.env</code> — never committed). Password comparison uses <code>hmac.compare_digest()</code> for constant-time equality. Admin endpoints are protected by a <code>require_admin()</code> dependency guard that enforces <code>role=admin</code> in the JWT payload when <code>auth_enabled=True</code>.</p>
+</div>
+
+
+<span class="section-anchor" id="providers"></span>
+<h2>5. LLM Provider Layer</h2>
+
+<h3>5.1 Architecture</h3>
+<p>Follows the <strong>Factory + Strategy pattern</strong>. <code>BaseLLMProvider</code> defines the abstract interface (<code>generate</code>, <code>stream</code>, <code>health_check</code>, <code>get_model_info</code>). Six concrete providers implement it. <code>LLMFactory.create(provider, config)</code> selects the right class, applying configured defaults, and automatically falls back to <code>settings.fallback_provider</code> on failure.</p>
+
+<h3>5.2 LLMService vs LLMFactory</h3>
+<div class="callout">
+  <p class="callout-title">Architectural Note — Two Parallel Abstractions</p>
+  <p>The codebase has two separate LLM abstractions: <code>LLMService</code> (<code>backend/llm/llm_service.py</code>) which is a direct httpx/OpenAI client wrapper used everywhere by agents, and <code>LLMFactory</code> + <code>BaseLLMProvider</code> (<code>backend/providers/</code>) which is a more complete provider abstraction. In practice only <code>LLMService</code> is used by the RAG chain and agents. The provider layer is built but largely unused in the hot path. This is significant technical debt.</p>
+</div>
+
+<h3>5.3 LLMService (<code>backend/llm/llm_service.py</code>)</h3>
+<p>The actual workhorse. Supports <code>ollama</code> and <code>openai</code> providers with sync-to-async HTTP via httpx. Key design decisions:</p>
+<ul>
+  <li>Sets <code>think=False</code> on Ollama to suppress internal reasoning tokens from qwen3</li>
+  <li>Falls back to the <code>thinking</code> field if <code>response</code> is empty (qwen3 edge case)</li>
+  <li>Sets <code>num_ctx</code> explicitly in every request to avoid Ollama's default truncation</li>
+  <li>Wraps timeout, connect, and HTTP errors with human-readable messages</li>
+  <li>Streaming uses <code>httpx.AsyncClient.stream()</code> and yields <code>{"type": "token", "content": str}</code> dicts</li>
+</ul>
+<p><strong>Weakness:</strong> Only Ollama and OpenAI are truly wired up. The <code>generate_with_history</code> method assumes an OpenAI-compatible client and will fail for Ollama. All the providers in <code>backend/providers/</code> are unreachable from the hot path.</p>
+
+<h3>5.4 Provider Implementations</h3>
+<table>
+  <tr><th>Provider</th><th>Status</th><th>Activation</th></tr>
+  <tr><td>Ollama</td><td><span class="badge badge-green">Active (default)</span></td><td>Automatic — requires <code>ollama serve</code></td></tr>
+  <tr><td>HuggingFace</td><td><span class="badge badge-blue">Implemented</span></td><td>Set <code>DEFAULT_PROVIDER=huggingface</code></td></tr>
+  <tr><td>OpenAI</td><td><span class="badge badge-blue">Implemented</span></td><td>Set <code>OPENAI_API_KEY</code></td></tr>
+  <tr><td>Anthropic</td><td><span class="badge badge-yellow">Provider-layer only</span></td><td>Set <code>ANTHROPIC_API_KEY</code></td></tr>
+  <tr><td>Gemini</td><td><span class="badge badge-yellow">Provider-layer only</span></td><td>Set <code>GOOGLE_API_KEY</code></td></tr>
+  <tr><td>Azure OpenAI</td><td><span class="badge badge-yellow">Provider-layer only</span></td><td>Set <code>AZURE_OPENAI_API_KEY</code></td></tr>
+</table>
+
+
+<span class="section-anchor" id="ingestion"></span>
+<h2>6. Document Ingestion Pipeline</h2>
+
+<h3>6.1 Overview</h3>
+<p>The ingestion pipeline transforms raw uploaded files into indexed, searchable chunks. It is a five-step sequential process: <strong>Load → Chunk → Embed → FAISS Index → BM25 Index</strong>.</p>
+
+<h3>6.2 Execution Flow</h3>
+<div class="diagram">
+upload_document (HTTP POST)
+    │
+    ▼
+IngestionPipeline.ingest_document(file_path, document_id)
+    │
+    ├─1─ _load_document()
+    │      └─ EnhancedPDFLoader.load()   (pdfplumber)
+    │           ├─ extract_text() per page
+    │           ├─ extract_tables() → table_to_markdown()
+    │           ├─ ChartDescriber.describe_page_images() → llava:7b
+    │           └─ OCRProcessor (if page blank + pytesseract available)
+    │         OR PDFLoader.load()         (PyPDF2 fallback)
+    │         OR DOCXLoader.load()
+    │
+    ├─2─ _chunk_document()
+    │      └─ DocumentChunker.chunk_pages()
+    │           └─ RecursiveCharacterTextSplitter (1000 chars, 200 overlap)
+    │      Tags each chunk: chunk_type ∈ {text, table, chart}
+    │
+    ├─3─ _generate_embeddings()
+    │      └─ EmbeddingService.embed_documents()
+    │           └─ SentenceTransformer("BAAI/bge-small-en-v1.5")
+    │
+    ├─4─ _index_chunks()   → FAISSVectorStore.add_vectors()
+    │
+    └─5─ _index_bm25()     → BM25Retriever.add_documents()
+         save() → faiss_index.bin + bm25_index.json
+</div>
+
+<h3>6.3 Document Loaders</h3>
+<p><strong>BaseDocumentLoader</strong> is an ABC with abstract <code>load(file_path)</code> and <code>supports_format(ext)</code>. It provides <code>_validate_file()</code>, <code>_extract_base_metadata()</code>, and <code>_clean_text()</code> utilities to all subclasses.</p>
+<p><strong>PDFLoader</strong> (legacy): PyPDF2-based, text-only extraction. Used as fallback when pdfplumber is absent.</p>
+<p><strong>EnhancedPDFLoader</strong> (Phase 13+14): pdfplumber extracts per-page text and tables simultaneously. Tables pass through <code>table_to_markdown()</code>. Chart images are cropped at 150 DPI and sent to llava:7b via Ollama's <code>/api/chat</code> endpoint. If a page yields no text/tables/charts and pytesseract is available, OCR runs as a last resort.</p>
+<p><strong>DOCXLoader</strong>: python-docx extracts paragraphs and tables from <code>.docx</code> files.</p>
+
+<h3>6.4 Chunking</h3>
+<p><code>DocumentChunker</code> wraps LangChain's <code>RecursiveCharacterTextSplitter</code>. Default: 1000-char chunks, 200-char overlap, separators <code>["\n\n", "\n", " ", ""]</code>. The <code>chunk_pages()</code> method preserves page-number metadata per chunk. Chunk indices are renumbered globally after page-level splitting.</p>
+<p><strong>Chunk types</strong> assigned in <code>_chunk_document()</code>:</p>
+<ul>
+  <li><code>chart</code> — content starts with <code>[CHART]</code></li>
+  <li><code>table</code> — content starts with <code>|</code> or <code>[TABLE]</code></li>
+  <li><code>text</code> — everything else</li>
+</ul>
+<div class="callout warn">
+  <p class="callout-title">Weakness</p>
+  <p>The chunker applies the same 1000-char budget to table and chart chunks. Large tables may be split mid-row, breaking the Markdown structure and producing garbled context. The <code>pdf_max_table_chunk_chars=2000</code> setting exists but the chunker itself doesn't honour it — it relies on pre-splitting in the loader, which is not always enforced.</p>
+</div>
+
+<h3>6.5 ChartDescriber (<code>backend/ingestion/chart_describer.py</code>)</h3>
+<p>Extracts images from a pdfplumber page, filters by bounding-box area (≥5000 pts²), renders to PNG at 150 DPI, and calls <code>ollama.chat(model="llava:7b")</code> with a structured prompt. Returns plain-text descriptions capped at 150 words. Maximum 3 images per page. Gracefully skips on any error.</p>
+
+<h3>6.6 Storage</h3>
+<ul>
+  <li>Raw files: <code>data/raw/</code></li>
+  <li>FAISS index: <code>data/vectorstore/faiss_index.bin</code></li>
+  <li>BM25 index: <code>data/vectorstore/bm25_index.json</code> (JSON — <strong>F-05: migrated from unsafe pickle</strong>)</li>
+  <li>Knowledge graph: <code>data/knowledge_graph.json</code></li>
+  <li>PostgreSQL: 5 tables via Alembic migration (see §4.6)</li>
+</ul>
+<div class="callout success">
+  <p class="callout-title">Partially Addressed</p>
+  <p>A full SQLAlchemy ORM schema (<code>backend/db/models.py</code>) and an Alembic migration (<code>alembic/versions/001_initial_schema.py</code>) have been added. The <strong>five tables</strong> are: <code>documents</code>, <code>document_chunks</code>, <code>conversations</code>, <code>conversation_messages</code>, and <code>feedback</code>. Apply with <code>alembic upgrade head</code> against the running Podman Postgres. The ingestion pipeline does not yet write to these tables — that is the next integration step. Document metadata displayed in the UI still comes from filesystem <code>stat()</code> calls until the pipeline is updated to persist to Postgres.</p>
+</div>
+
+
+<span class="section-anchor" id="retrieval"></span>
+<h2>7. Retrieval Layer</h2>
+
+<h3>7.1 FAISSVectorStore (<code>backend/retrievers/vector_store.py</code>)</h3>
+<p>Wraps <code>faiss.IndexFlatL2</code> with metadata management. Vectors are stored in the FAISS index; metadata (chunk content, document_id, filename, page_number, etc.) in a parallel Python list. Saved/loaded as a binary <code>.bin</code> + JSON pair. Provides <code>add_vectors(embeddings, metadata_list, chunk_ids)</code>, <code>search(query_embedding, top_k)</code>, <code>delete_by_id(vector_id)</code>, <code>delete_by_document_id(document_id)</code>, <code>get_stats()</code>.</p>
+<p><strong>Vector deletion:</strong> <code>delete_by_document_id(document_id)</code> soft-deletes all chunks belonging to a document by replacing their metadata with <code>{"deleted": True}</code> and removing them from the ID→index map.</p>
+<p><strong>Index compaction (Phase 15):</strong> <code>compact()</code> rebuilds the FAISS index to physically remove all soft-deleted vectors. It calls <code>index.reconstruct(pos)</code> for each live entry, creates a fresh <code>IndexFlatL2</code>, and re-adds only the live vectors. <code>delete_by_document_id()</code> calls <code>compact()</code> automatically, so the on-disk index stays lean after every deletion.</p>
+<p><strong>Trade-off:</strong> <code>IndexFlatL2</code> is exact search — optimal for accuracy but O(n) with corpus size. For a prototype corpus (&lt;100K chunks) this is fine. At scale, an HNSW or IVF index would be needed.</p>
+
+<h3>7.2 BM25Retriever (<code>backend/retrievers/bm25_retriever.py</code>)</h3>
+<p>Wraps <code>rank_bm25.BM25Okapi</code> with configurable <code>k1=1.5</code> (term saturation) and <code>b=0.75</code> (length normalisation). Tokenises with lowercase split (no stemming, no stopword removal). Serialised to disk with <code>pickle</code>. Provides <code>add_documents()</code>, <code>search(query, top_k)</code>, <code>save()</code>, <code>load()</code>.</p>
+<p><strong>Trade-off:</strong> Pickle serialisation is fragile across Python version upgrades and poses a deserialization attack risk if the file is writable by untrusted parties.</p>
+
+<h3>7.3 HybridRetriever (<code>backend/retrievers/hybrid_retriever.py</code>)</h3>
+<p>The primary retrieval interface used by all consumers. Three modes:</p>
+<ul>
+  <li><code>faiss</code>: semantic-only via FAISS</li>
+  <li><code>bm25</code>: keyword-only via BM25</li>
+  <li><code>hybrid</code>: both run in parallel via <code>asyncio.gather()</code>, then fused with <strong>Reciprocal Rank Fusion (RRF)</strong></li>
+</ul>
+<p>In hybrid mode, <code>top_k * 2</code> results are fetched from each source before fusion to improve recall. An optional <code>faiss_query</code> parameter allows the HyDE answer to be used for FAISS while BM25 still uses the original query — a well-designed separation.</p>
+
+<h3>7.4 Reciprocal Rank Fusion (<code>backend/retrievers/fusion.py</code>)</h3>
+<p>RRF score formula: <code>score(d) = Σ w_i / (k + rank_i(d))</code> where <code>k=60</code> (default). Handles chunk-id deduplication across lists. Weighted variant allows FAISS and BM25 to have different influence (default 0.5/0.5). Results are sorted by fused score and capped to <code>top_k</code>.</p>
+
+<h3>7.5 Shared Instance Management</h3>
+<p><code>vector_store_manager.py</code> and <code>bm25_manager.py</code> provide <code>get_shared_vector_store()</code> and <code>get_shared_bm25_retriever()</code> singletons. These load from disk on first call, ensuring ingestion and retrieval share the same in-memory index across request handlers.</p>
+
+
+<span class="section-anchor" id="query-understanding"></span>
+<h2>8. Query Understanding (<code>backend/query_understanding/</code>)</h2>
+
+<h3>8.1 Overview</h3>
+<p>Three LLM-powered techniques run before retrieval to improve query quality. All are opt-in per request via <code>QueryUnderstandingOptions</code>.</p>
+
+<h3>8.2 QueryReformulator</h3>
+<p>Detects vague queries (short queries, pronouns like "it/this/that", bare "how" questions without subject) and rewrites them using an LLM. Temperature 0.3, max 80 tokens. Uses the last 3 conversation turns as context for pronoun resolution. If the query is already clear, skips the LLM call.</p>
+
+<h3>8.3 QueryExpander</h3>
+<p>Generates N alternative phrasings (default 3) via LLM at temperature 0.7. Returns the original query as the first element. Parses numbered/bulleted lists from the LLM response. The expansions are used for multi-query retrieval (each expansion retrieved, then fused).</p>
+
+<h3>8.4 HyDEGenerator</h3>
+<p>Generates a short hypothetical answer (≤200 tokens) that <em>would</em> appear in a relevant document. This synthetic text is used as the FAISS query instead of the original question, improving semantic recall for factual and technical queries. The original question is always used for BM25.</p>
+
+<h3>8.5 QueryProcessor</h3>
+<p>Orchestrates all three. Runs reformulation first (serial), then expansion and HyDE in parallel via <code>asyncio.gather()</code>. Returns a <code>QueryProcessingResult</code> dataclass with all variants, timing, and flags for which techniques were applied.</p>
+<div class="callout">
+  <p class="callout-title">Design Observation</p>
+  <p>Query understanding is only applied on the linear <code>RAGChain</code> path when the client explicitly passes <code>query_understanding</code> options in the request body. The <code>AgentGraph</code> and multi-agent pipeline do <em>not</em> use <code>QueryProcessor</code> — they perform their own LLM-based query rewriting inline. This creates duplicate logic and means the Phase 3 investment is only available via the plain chat endpoint.</p>
+</div>
+
+
+<span class="section-anchor" id="reranking"></span>
+<h2>9. Reranking (<code>backend/rerankers/cross_encoder.py</code>)</h2>
+<p><code>CrossEncoderReranker</code> uses <code>cross-encoder/ms-marco-MiniLM-L-6-v2</code> (~22 MB). A cross-encoder scores each (query, chunk) pair jointly, producing more accurate relevance scores than the bi-encoder embeddings used for initial retrieval. Batch scoring (default 16), top-N selection (default 3). Lazy model loading — downloads on first use, cached thereafter.</p>
+<p>Controlled by <code>settings.enable_reranking</code> (default <code>False</code>) and a per-request <code>use_reranking</code> override. When disabled, the <code>RAGChain</code> instantiates <code>self.reranker = None</code> and skips the reranking step entirely.</p>
+
+
+<span class="section-anchor" id="rag-chain"></span>
+<h2>10. RAG Chain (<code>backend/llm/rag_chain.py</code>)</h2>
+<p>The linear (non-agentic) RAG orchestrator. Used by <code>/api/v1/chat</code> and <code>/api/v1/chat/stream</code>.</p>
+
+<h3>Execution Flow</h3>
+<div class="diagram">
+generate_response(query, top_k, ...)
+    │
+    ├─1─ QueryProcessor.process()         [optional, Phase 3]
+    │      Reformulate → Expand → HyDE
+    │
+    ├─2─ HybridRetriever.retrieve()       [Phase 2]
+    │      FAISS + BM25 parallel → RRF fusion
+    │      faiss_query = hyde_answer (if available)
+    │
+    ├─3─ CrossEncoderReranker.rerank()    [optional, Phase 4]
+    │
+    ├─4─ _build_prompt(query, context, history)
+    │      System + last-5-turns history + context + question
+    │
+    ├─5─ LLMService.generate(prompt)
+    │
+    └─6─ _format_sources(results)
+         Return {response, sources, metadata, query_metadata}
+</div>
+<p><strong>Key design note:</strong> The original (pre-reformulation) <code>query</code> is always used in the final prompt, even if HyDE/reformulation was applied for retrieval. This ensures the answer addresses the user's actual question, not the hypothetical rewrite.</p>
+
+
+<span class="section-anchor" id="memory"></span>
+<h2>11. Conversational Memory</h2>
+
+<h3>11.1 SessionMemory (<code>backend/memory/session_memory.py</code>)</h3>
+<p>Per-conversation message store backed by Redis. Each conversation is a Redis list under key <code>conv:&lt;id&gt;:messages</code> (JSON-encoded entries) with a 24-hour TTL. Metadata (created_at, updated_at) is stored in a Redis hash under <code>conv:&lt;id&gt;:meta</code>. On Redis unavailability, an in-process <code>dict</code> fallback activates automatically — no errors surface to users.</p>
+
+<h3>11.2 ConversationManager (<code>backend/memory/conversation_manager.py</code>)</h3>
+<p>Higher-level API: <code>record_turn(conv_id, user_msg, assistant_msg)</code> and <code>get_prompt_history(conv_id)</code>. Implements <strong>conversation summarisation</strong>: when message count exceeds <code>memory_summary_threshold * 2</code>, the oldest half is summarised by the LLM and replaced with a single <code>system</code> message, keeping the context window small.</p>
+<div class="callout">
+  <p class="callout-title">Note on Lazy LLM Injection</p>
+  <p>The module-level <code>conversation_manager = ConversationManager()</code> singleton is instantiated with <code>llm_service=None</code>, disabling summarisation. The chat route never injects an LLM, so summarisation is silently disabled in practice despite the setting <code>memory_enable_summarisation=True</code>.</p>
+</div>
+
+
+<span class="section-anchor" id="guardrails"></span>
+<h2>12. Guardrails &amp; Safety (<code>backend/guardrails/</code>)</h2>
+
+<h3>12.1 GuardrailsPipeline</h3>
+<p>Orchestrates all detectors in two phases:</p>
+<ul>
+  <li><strong>Input checks</strong> (before LLM): Prompt Injection → Toxicity → PII (short-circuits on first block)</li>
+  <li><strong>Output checks</strong> (after LLM): Hallucination → PII in answer</li>
+</ul>
+<p>Returns a <code>GuardrailsResult</code> dataclass with <code>blocked: bool</code>, <code>block_reason: str</code>, <code>checks: list[DetectionResult]</code>, and <code>redacted_text: str | None</code>.</p>
+
+<h3>12.2 Detectors</h3>
+<table>
+  <tr><th>Detector</th><th>Method</th><th>Patterns</th><th>Default Block</th></tr>
+  <tr><td>PromptInjectionDetector</td><td>Regex (14 patterns)</td><td>Jailbreak, instruction overrides, delimiter injection, role override</td><td>Yes</td></tr>
+  <tr><td>PIIDetector</td><td>Regex (8 patterns)</td><td>SSN, credit card, email, phone, IP, API keys, DOB</td><td>No (warn+redact)</td></tr>
+  <tr><td>ToxicityDetector</td><td>Regex (7 patterns)</td><td>Violence, self-harm, hate speech, harassment</td><td>Yes</td></tr>
+  <tr><td>HallucinationDetector</td><td>LLM-as-judge + heuristic overlap</td><td>GROUNDED vs HALLUCINATION verdict</td><td>No (warn)</td></tr>
+</table>
+<p><strong>Strengths:</strong> Fully offline, no API keys required, fast, clearly configurable per-type. <strong>Weaknesses:</strong> Regex-only toxicity detection misses paraphrasing, coded language, and cross-language attacks. The heuristic hallucination fallback (token overlap ratio) is a crude approximation — a response that uses different vocabulary than the context will be flagged even if semantically equivalent.</p>
+
+
+<span class="section-anchor" id="agents"></span>
+<h2>13. Agentic RAG — LangGraph (<code>backend/agents/</code>)</h2>
+
+<h3>13.1 State (<code>backend/agents/state.py</code>)</h3>
+<p><code>AgentState</code> is a <code>TypedDict</code> with <code>total=False</code>. The <code>trace</code> field uses <code>Annotated[List[str], operator.add]</code> — LangGraph's built-in list reducer that safely appends entries from multiple nodes without clobbering.</p>
+
+<h3>13.2 Node Functions (<code>backend/agents/nodes.py</code>)</h3>
+<p>Six pure async functions, each receiving <code>(state, dependency)</code> via <code>functools.partial</code>:</p>
+<table>
+  <tr><th>Node</th><th>Dependency</th><th>Responsibility</th></tr>
+  <tr><td><code>route_query</code></td><td>llm</td><td>LLM classifies query → hybrid/faiss/bm25 strategy</td></tr>
+  <tr><td><code>rewrite_query</code></td><td>llm</td><td>Rewrites vague query; increments rewrite_count</td></tr>
+  <tr><td><code>retrieve</code></td><td>retriever</td><td>Runs HybridRetriever; serialises results to plain dicts</td></tr>
+  <tr><td><code>grade_documents</code></td><td>llm</td><td>LLM yes/no per chunk; drops irrelevant; keeps ≥1</td></tr>
+  <tr><td><code>generate</code></td><td>llm</td><td>Builds prompt with graded context; calls LLM</td></tr>
+  <tr><td><code>check_grounding</code></td><td>llm</td><td>GROUNDED/HALLUCINATION verdict on answer</td></tr>
+</table>
+
+<h3>13.3 Graph Topology (<code>backend/agents/graph.py</code>)</h3>
+<div class="diagram">
+START → route_query
+            │
+     ┌──────▼──────┐  rewrite_count=0 and not yet rewritten?
+     │  rewrite?   │──yes──► rewrite_query ──┐
+     └──────┬──────┘                          │
+            │ no                              │
+            └──────────────┬──────────────────┘
+                           ▼
+                        retrieve
+                           │
+                    grade_documents
+                           │
+                        generate
+                           │
+                  check_grounding
+                           │
+                ┌──────────▼──────────┐
+                │ grounded OR         │
+                │ rewrites exhausted? │──yes──► END
+                └──────────┬──────────┘
+                           │ no
+                           └──► route_query (retry loop)
+</div>
+<p>The graph supports up to <code>agent_max_rewrites=2</code> retry loops. On each failed grounding check, the query is re-routed and potentially rewritten with a different strategy. This prevents infinite loops while still providing recovery.</p>
+
+<h3>13.4 Dependency Injection Pattern</h3>
+<p>Dependencies (llm, retriever) are injected via <code>functools.partial</code> when building the graph, not imported globally. This makes nodes unit-testable — pass mock llm/retriever and call the node directly.</p>
+
+
+<span class="section-anchor" id="multi-agent"></span>
+<h2>14. Multi-Agent Ecosystem (<code>backend/agents/multi/</code>)</h2>
+
+<h3>14.1 Architecture</h3>
+<p>Five specialised sub-agents, each implemented as its own compiled <code>StateGraph</code>, orchestrated by a top-level <code>MultiAgentOrchestrator</code>. All share a single <code>MultiAgentState</code> TypedDict — different agents write to different fields, so results accumulate without clobbering.</p>
+
+<h3>14.2 Pipeline Flow</h3>
+<div class="diagram">
+classify_intent (LLM → research | retrieval | general)
+        │
+┌───────▼──────────┬──────────────┐
+│   research       │  retrieval   │ (general → retrieval path)
+│   ResearchAgent  │  RetrievalAgent
+└───────┬──────────┴──────┬───────┘
+        └────────┬─────────┘
+                 ▼
+         KnowledgeAgent     (entity extraction + graph lookup)
+                 │
+         EvaluationAgent    (quality scoring)
+                 │
+         GovernanceAgent    (safety + attribution + confidence)
+                 │
+         generate_final     (assemble + LLM final answer)
+                 │
+                END
+</div>
+
+<h3>14.3 Sub-Agent Responsibilities</h3>
+<table>
+  <tr><th>Agent</th><th>Graph Nodes</th><th>Key Logic</th></tr>
+  <tr><td><strong>ResearchAgent</strong></td><td>decompose → retrieve+answer → synthesise</td><td>Decomposes query into ≤4 sub-questions; retrieves + answers each independently; LLM synthesises findings into a summary paragraph</td></tr>
+  <tr><td><strong>RetrievalAgent</strong></td><td>select_strategy → expand_and_retrieve → rerank</td><td>LLM picks strategy; generates N query expansions; parallel retrieval for all; deduplicates by chunk_id; optional reranking</td></tr>
+  <tr><td><strong>KnowledgeAgent</strong></td><td>extract_entities → graph_lookup → build_context</td><td>Extracts entities from query; looks up neighbourhood in GraphStore; builds enriched context string</td></tr>
+  <tr><td><strong>EvaluationAgent</strong></td><td>evaluate_answer</td><td>Heuristic scoring (source coverage, confidence, length); optional RAGAS via setting; produces eval_scores dict + human summary</td></tr>
+  <tr><td><strong>GovernanceAgent</strong></td><td>run_governance_checks</td><td>Runs guardrails pipeline; checks attribution completeness; checks confidence threshold; can replace answer with disclaimer</td></tr>
+</table>
+
+<h3>14.4 Intent Classification</h3>
+<p>The orchestrator's <code>classify_intent</code> node prompts the LLM with a one-word classification: <code>research | retrieval | general</code>. Both <code>retrieval</code> and <code>general</code> route to <code>RetrievalAgent</code>. Only <code>research</code> routes to <code>ResearchAgent</code>. The research path is significantly more expensive (≥ 4×N LLM calls).</p>
+
+<div class="callout warn">
+  <p class="callout-title">Design Issue</p>
+  <p>Each sub-agent calls <code>StateGraph.ainvoke()</code>, which is correct for a single-agent sub-graph. However, the outer orchestrator also uses <code>ainvoke()</code> which runs nodes sequentially. LangGraph 0.1.19 does not natively parallelize branches of the outer graph. The research and retrieval branches are conditional (not parallel), so only one runs per query. This is fine architecturally but worth noting for future optimization.</p>
+</div>
+
+
+<span class="section-anchor" id="knowledge-graph"></span>
+<h2>15. Knowledge Graph (<code>backend/knowledge_graph/</code>)</h2>
+
+<h3>15.1 GraphStore</h3>
+<p>Wraps a <code>NetworkX.MultiDiGraph</code>. Entities are nodes; relations are directed edges with <code>predicate</code>, <code>confidence</code>, and <code>source_doc</code> attributes. Node IDs are stable SHA-1 hashes of <code>(entity_type, entity_text.lower())</code>. Serialised to/from JSON via <code>networkx.node_link_data()</code>. A module-level <code>get_graph_store()</code> singleton is used everywhere.</p>
+
+<h3>15.2 Entity Extraction</h3>
+<p><code>EntityExtractor</code> uses an LLM-first strategy: structured NER prompt requesting <code>TYPE: entity text</code> lines. Falls back to regex patterns (proper nouns, acronyms, version-tagged terms, quoted strings) when LLM is unavailable or fails. Configurable entity types: <code>PERSON, ORG, PRODUCT, LOCATION, CONCEPT, TECHNICAL</code>.</p>
+
+<h3>15.3 Relation Mapping</h3>
+<p><code>RelationMapper</code> prompts the LLM for <code>subject | predicate | object</code> triples. Falls back to heuristic regex for simple <code>X is Y</code>, <code>X uses Y</code>, <code>X has Y</code> patterns. Confidence scores are included in the output.</p>
+
+<h3>15.4 Graph Retrieval</h3>
+<p><code>GraphRetriever</code> performs entity substring search, then expands to the 2-hop ego-graph. <code>HybridGraphRetriever</code> fuses FAISS+BM25 vector results with graph-enriched results using weighted RRF (0.6 vector / 0.4 graph by default).</p>
+
+<div class="callout warn">
+  <p class="callout-title">Scalability Concern</p>
+  <p>The entire KG is loaded into RAM as a NetworkX graph. For small corpora (&lt;10K entities) this is fine. For large document sets, in-memory graphs become impractical. There is no pagination on entity/relation endpoints, which could produce very large responses on large graphs.</p>
+</div>
+
+
+<span class="section-anchor" id="evaluators"></span>
+<h2>16. Evaluation Framework (<code>backend/evaluators/</code>)</h2>
+
+<h3>16.1 Metrics</h3>
+<table>
+  <tr><th>Metric</th><th>Requires ground truth</th><th>Description</th></tr>
+  <tr><td>faithfulness</td><td>No</td><td>Answer fully supported by retrieved context</td></tr>
+  <tr><td>answer_relevancy</td><td>No</td><td>Answer addresses the asked question</td></tr>
+  <tr><td>context_precision</td><td>No</td><td>Retrieved chunks are relevant to question</td></tr>
+  <tr><td>context_recall</td><td>Yes</td><td>Context contains all info needed to answer</td></tr>
+  <tr><td>factual_correctness</td><td>Yes</td><td>Answer factually matches reference answer</td></tr>
+</table>
+
+<h3>16.2 RAGASEvaluator</h3>
+<p>Wraps the RAGAS library. Accepts a list of <code>EvaluationSample</code> objects and a list of metric names. Uses the configured LLM as judge. Returns aggregated scores (mean per metric) plus per-sample breakdowns. Capped at <code>eval_max_samples=50</code> per run to prevent runaway costs on local LLMs.</p>
+<p><strong>Note:</strong> RAGAS internally uses LangChain's LLM interface. When using Ollama, RAGAS is configured with a <code>ChatOllama</code> wrapper. This introduces a LangChain dependency in the evaluation path that doesn't exist elsewhere.</p>
+
+
+<span class="section-anchor" id="api"></span>
+<h2>17. API Layer</h2>
+
+<h3>17.1 Application Factory (<code>backend/api/main.py</code>)</h3>
+<p><code>create_app()</code> registers all routers, middleware, and lifecycle events. Middleware order: <code>JWTAuthMiddleware</code> outermost, then <code>CORSMiddleware</code>. <code>setup_tracing()</code> is called in the startup event. The root <code>GET /</code> endpoint returns a discovery map of all API groups.</p>
+
+<h3>17.2 Route Summary</h3>
+<table>
+  <tr><th>Prefix</th><th>File</th><th>Key Endpoints</th></tr>
+  <tr><td>/health, /healthz, /readyz</td><td>health.py</td><td>Liveness, readiness</td></tr>
+  <tr><td>/api/v1/status</td><td>status.py</td><td>PostgreSQL, Redis, Ollama health</td></tr>
+  <tr><td>/api/v1/documents</td><td>documents.py</td><td>upload, list, get, delete, search, stats</td></tr>
+  <tr><td>/api/v1/chat</td><td>chat.py</td><td>POST (RAG), POST /stream (SSE), POST /direct</td></tr>
+  <tr><td>/api/v1/agent</td><td>agent.py</td><td>POST /chat (LangGraph pipeline)</td></tr>
+  <tr><td>/api/v1/multi-agent</td><td>multi_agent.py</td><td>POST /chat (5-agent pipeline)</td></tr>
+  <tr><td>/api/v1/evaluate</td><td>evaluate.py</td><td>POST (RAGAS run), GET /metrics</td></tr>
+  <tr><td>/api/v1/memory</td><td>memory.py</td><td>GET /{id}, GET /{id}/info, DELETE /{id}</td></tr>
+  <tr><td>/api/v1/guardrails</td><td>guardrails.py</td><td>POST /check/input, POST /check/output, GET /status</td></tr>
+  <tr><td>/api/v1/kg</td><td>knowledge_graph.py</td><td>POST /build, GET /query, GET /stats, entities, relations, DELETE /clear</td></tr>
+  <tr><td>/api/v1/feedback</td><td>feedback.py</td><td>POST (store rating)</td></tr>
+  <tr><td>/api/v1/admin</td><td>admin.py</td><td>POST /clear-vector-stores, GET /system-info</td></tr>
+  <tr><td>/auth</td><td>auth.py</td><td>POST /token, POST /token/refresh, GET /status</td></tr>
+</table>
+
+<h3>17.3 Pydantic Models</h3>
+<p><code>backend/api/models/chat.py</code> and <code>documents.py</code> define comprehensive request/response schemas. <code>ChatRequest</code> supports full query understanding options, retrieval method selection, and per-request reranking override. All schemas have <code>json_schema_extra</code> examples for interactive Swagger docs.</p>
+<p><strong>Note:</strong> Models still use Pydantic v1-style <code>@validator</code> decorators. Pydantic v2 (which is installed via <code>pydantic==2.5.3</code>) deprecated these in favour of <code>@field_validator</code>. This works via the v1 compatibility layer but will produce deprecation warnings.</p>
+
+<h3>17.4 Document Route — State Management Issue</h3>
+<div class="callout danger">
+  <p class="callout-title">Design Flaw</p>
+  <p>The <code>GET /api/v1/documents</code> endpoint lists documents by scanning the <code>data/raw/</code> filesystem directory and infers the document ID from the filename stem. However, uploaded files are named <code>doc_xxxxx_originalfilename.ext</code>, not <code>doc_xxxxx.ext</code>. The <code>GET /{document_id}</code> endpoint then tries to open <code>data/raw/{document_id}.pdf</code> which will never match. The delete endpoint has the same mismatch. Document IDs cannot be looked up after upload without persistence layer support.</p>
+</div>
+
+
+<span class="section-anchor" id="frontend"></span>
+<h2>18. Frontend (Streamlit)</h2>
+
+<h3>18.1 Page Structure</h3>
+<table>
+  <tr><th>Page</th><th>File</th><th>Key Features</th></tr>
+  <tr><td>Home</td><td>app.py</td><td>Backend status, quick-start guide, system metrics</td></tr>
+  <tr><td>📄 Documents</td><td>1_📄_Documents.py</td><td>Upload, library (with search filter), statistics + Phase 13/14 extraction info</td></tr>
+  <tr><td>💬 Chat</td><td>2_💬_Chat.py</td><td>Full RAG chat: streaming SSE, query understanding panel, source citations, safety badges, feedback thumbs</td></tr>
+  <tr><td>📊 Evaluate</td><td>3_📊_Evaluate.py</td><td>Manual + JSON batch RAGAS evaluation, score charts</td></tr>
+  <tr><td>🤖 Agent</td><td>4_🤖_Agent.py</td><td>LangGraph agentic chat with trace display</td></tr>
+  <tr><td>🌐 Multi Agent</td><td>5_🌐_Multi_Agent.py</td><td>5-agent pipeline with per-agent result cards</td></tr>
+  <tr><td>🕸️ Knowledge Graph</td><td>6_🕸️_Knowledge_Graph.py</td><td>Build KG, query entities/relations, stats</td></tr>
+</table>
+
+<h3>18.2 State Management</h3>
+<p>Streamlit's <code>st.session_state</code> is used for per-page state (messages, conversation_id, UI toggles). Conversation history is also persisted to the backend memory API (Redis) and reloaded on page refresh via <code>_restore_history_from_server()</code>. This gives persistent memory across Streamlit reloads.</p>
+
+<h3>18.3 Streaming Implementation</h3>
+<p>The chat page implements SSE streaming using <code>requests.post(..., stream=True)</code> + <code>resp.iter_lines()</code> inside a generator function. <code>st.write_stream()</code> consumes the generator and renders tokens as they arrive. Sources are transmitted at the end as a <code>[SOURCES]{...}</code> sentinel line, then stripped from the token stream and rendered separately.</p>
+
+
+<span class="section-anchor" id="config-guide"></span>
+<h2>19. Configuration Guide</h2>
+
+<h3>Minimal Setup (<code>.env</code> overrides)</h3>
+<pre><code># Required for local inference
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_DEFAULT_MODEL=qwen3:4b
+
+# Security — change in any non-development deployment
+JWT_SECRET_KEY=&lt;random 32+ char string&gt;
+
+# Recommended — increase if seeing timeouts
+OLLAMA_TIMEOUT=300
+OLLAMA_NUM_CTX=4096</code></pre>
+
+<h3>Production Checklist</h3>
+<ul>
+  <li>Set <code>ENVIRONMENT=production</code>, <code>DEBUG=false</code></li>
+  <li>Set <code>AUTH_ENABLED=true</code> and a strong <code>JWT_SECRET_KEY</code></li>
+  <li>Set real <code>DB_PASSWORD</code> (even if PostgreSQL not yet used)</li>
+  <li>Configure <code>CORS_ORIGINS</code> to only allow your domain</li>
+  <li>Set <code>LANGSMITH_ENABLED=true</code> + key for tracing</li>
+  <li>Set <code>OTEL_ENABLED=true</code> + collector endpoint for spans</li>
+  <li>Set <code>ENABLE_RERANKING=true</code> for better answer quality</li>
+</ul>
+
+
+<span class="section-anchor" id="data-flow"></span>
+<h2>20. Data Flow &amp; Request Lifecycle</h2>
+
+<h3>Document Upload Flow</h3>
+<div class="diagram">
+Client → POST /api/v1/documents/upload (multipart)
+  → JWTAuthMiddleware (pass-through if auth_enabled=False)
+  → documents.upload_document()
+      ├─ Validate file ext (.pdf / .docx)
+      ├─ Generate document_id = doc_{uuid12}
+      ├─ Save to data/raw/{doc_id}_{filename}.ext
+      └─ BackgroundTasks.add_task(process_document_background)
+  → Response 200 (status: "processing")
+
+[Background Task]
+  IngestionPipeline.ingest_document(file_path, doc_id)
+    → load → chunk → embed → FAISS index → BM25 index → save
+</div>
+
+<h3>Chat Request Flow</h3>
+<div class="diagram">
+Client → POST /api/v1/chat  {message, conversation_id, ...}
+  → JWTAuthMiddleware
+  → CORSMiddleware
+  → chat() handler
+      ├─ GuardrailsPipeline.check_input(message)    [injection+toxicity+PII]
+      │    └─ if blocked → 400
+      ├─ ConversationManager.get_prompt_history(conv_id)  [Redis]
+      ├─ RAGChain.generate_response(query, ...)
+      │    ├─ QueryProcessor.process()              [optional]
+      │    ├─ HybridRetriever.retrieve()            [FAISS+BM25 parallel]
+      │    ├─ CrossEncoderReranker.rerank()         [optional]
+      │    ├─ _build_prompt(context, history)
+      │    └─ LLMService.generate(prompt)  →  Ollama HTTP
+      ├─ GuardrailsPipeline.check_output(answer, contexts)  [hallucination+PII]
+      ├─ ConversationManager.record_turn(conv_id, q, a)  [Redis]
+      └─ Response 200 {conversation_id, message, sources, metadata}
+</div>
+
+<h3>Agentic Chat Flow</h3>
+<div class="diagram">
+Client → POST /api/v1/agent/chat  {message, ...}
+  → AgentGraph.run(initial_state)
+      → LangGraph ainvoke()
+          route_query  →  [rewrite_query]  →  retrieve
+          →  grade_documents  →  generate  →  check_grounding
+          →  [loop if not grounded AND rewrites &lt; max]
+  → Response 200 {answer, sources, trace, is_grounded, rewrite_count}
+</div>
+
+
+<span class="section-anchor" id="security"></span>
+<h2>21. Security</h2>
+
+<h3>Current Security Controls</h3>
+<ul>
+  <li>JWT HS256 Bearer token authentication (opt-in)</li>
+  <li>Prompt injection detection (14 regex patterns)</li>
+  <li>PII detection and redaction</li>
+  <li>Toxicity detection</li>
+  <li>CORS configuration (locked to localhost origins by default)</li>
+  <li>API key hashing (SHA-256 + constant-time compare)</li>
+</ul>
+
+<h3>Security Gaps — Fixed</h3>
+<ul>
+  <li><span class="badge badge-green">Fixed F-02</span> <strong>Constant-time password comparison</strong>: <code>hmac.compare_digest()</code> replaces plain <code>!=</code>; credentials loaded from <code>.env</code></li>
+  <li><span class="badge badge-green">Fixed F-03</span> <strong>Admin role guard</strong>: <code>require_admin()</code> dependency enforces <code>role=admin</code> JWT claim on all admin routes when <code>auth_enabled=True</code></li>
+  <li><span class="badge badge-green">Fixed F-04</span> <strong>JWT secret startup check</strong>: <code>RuntimeError</code> in production / <code>WARNING</code> in development when default secret is detected</li>
+  <li><span class="badge badge-green">Fixed F-05</span> <strong>BM25 pickle eliminated</strong>: Index now serialised as JSON; legacy <code>.pkl</code> files are read-only for migration, then discarded</li>
+</ul>
+<h3>Security Gaps — Remaining</h3>
+<ul>
+  <li><strong>No password hashing</strong>: Demo credentials are plain strings loaded from env — bcrypt/argon2 not used</li>
+  <li><span class="badge badge-green">Fixed — Phase 15</span> <strong>Rate limiting added</strong>: <code>slowapi</code> per-IP limits on all 5 LLM endpoints; configurable via <code>RATE_LIMIT_*</code> env vars</li>
+  <li><strong>No input size limits</strong> on the chat endpoint</li>
+  <li><strong>No HTTPS enforcement</strong> in the application layer (Caddy handles TLS in production deploy only)</li>
+</ul>
+
+
+<span class="section-anchor" id="testing"></span>
+<h2>22. Testing</h2>
+<p>The test suite lives in <code>backend/tests/</code> and uses pytest with asyncio mode auto. <strong>203 tests across 8 modules — 0 failures.</strong> (2 pre-existing failures in <code>TestDocumentList</code> caused by DB document accumulation across test runs — not a regression.)</p>
+<table>
+  <tr><th>Module</th><th>Test File</th><th>Tests</th><th>Coverage Area</th></tr>
+  <tr><td>Chunking</td><td>test_chunking.py</td><td>17</td><td>DocumentChunker split logic, edge cases</td></tr>
+  <tr><td>Loaders</td><td>test_loaders.py</td><td>14</td><td>PDF/DOCX loading, error handling</td></tr>
+  <tr><td>Query Understanding</td><td>test_query_understanding.py</td><td>20</td><td>Expander, reformulator, HyDE, processor</td></tr>
+  <tr><td>Reranker</td><td>test_reranker.py</td><td>11</td><td>CrossEncoderReranker scoring and ranking</td></tr>
+  <tr><td>Memory</td><td>test_memory.py</td><td>24</td><td>SessionMemory, ConversationManager, Redis fallback, summarisation</td></tr>
+  <tr><td>Guardrails</td><td>test_guardrails.py</td><td>22</td><td>All detectors, pipeline, hallucination checker</td></tr>
+  <tr><td>API Integration (smoke)</td><td>test_api_integration.py</td><td>13</td><td>Health endpoints, basic document/chat/docs smoke tests</td></tr>
+  <tr><td>API Routes (comprehensive)</td><td>test_api_routes.py</td><td>52</td><td>Auth (token, refresh, role claims), document upload/list/get/delete/search/stats, chat RAG + guardrail block + stream, admin system-info + clear, OpenAPI schema</td></tr>
+</table>
+
+<div class="callout success">
+  <p class="callout-title">Route Coverage Added</p>
+  <p><code>backend/tests/conftest.py</code> provides shared session-scoped fixtures: <code>client</code> (FastAPI TestClient), <code>tmp_upload_dir</code> (isolated per-test upload directory via monkeypatch), <code>auth_token</code>, <code>user_token</code>, and <code>minimal_pdf_bytes</code> (hand-crafted valid PDF with no external dependency). LLM calls in RAG and guardrail tests are mocked with <code>unittest.mock.AsyncMock</code> so tests run without a live Ollama instance.</p>
+</div>
+
+<div class="callout warn">
+  <p class="callout-title">Remaining Testing Gap</p>
+  <p>The following critical paths still have <strong>no tests</strong>: <code>AgentGraph</code> and all node functions, <code>MultiAgentOrchestrator</code> and all sub-agents, <code>KnowledgeGraph</code> (GraphStore, EntityExtractor, RelationMapper), <code>HybridRetriever</code> and RRF fusion, and <code>RAGChain.generate_response()</code> integration.</p>
+</div>
+
+
+<span class="section-anchor" id="code-review"></span>
+<h2>23. Code Review</h2>
+
+<h3>Code Smells &amp; Anti-Patterns</h3>
+
+<div class="review-item weakness">
+  <h4>Duplicate LLM Abstraction</h4>
+  <p><strong>Problem:</strong> <code>LLMService</code> in <code>llm/llm_service.py</code> and <code>BaseLLMProvider</code> + <code>LLMFactory</code> in <code>providers/</code> serve the same purpose. The provider layer is built but unreachable from the agent/RAG hot path. <strong>Impact:</strong> High — 6 files of dead/duplicate code; any provider feature added to <code>providers/</code> doesn't reach the agents. <strong>Fix:</strong> Migrate <code>LLMService</code> to delegate to <code>LLMFactory</code>.</p>
+</div>
+
+<div class="review-item strength">
+  <h4><span class="badge badge-green">Fixed — F-10</span> Route-Level Singletons Replaced with Lazy Factories</h4>
+  <p><code>chat.py</code> and <code>documents.py</code> previously instantiated <code>RAGChain()</code>, <code>IngestionPipeline()</code>, and <code>DocumentRetriever()</code> at module import time. These are now <code>@lru_cache(maxsize=1)</code> factory functions (<code>_get_rag_chain()</code>, <code>_get_ingestion_pipeline()</code>, etc.) — lazy, mockable, and startup-crash-safe.</p>
+</div>
+
+<div class="review-item strength">
+  <h4><span class="badge badge-green">Fixed — F-08</span> Pydantic v2 <code>@field_validator</code> Migration Complete</h4>
+  <p><code>api/models/chat.py</code> and <code>documents.py</code> migrated from deprecated <code>@validator</code> to <code>@field_validator(mode='before')</code>. No deprecation warnings.</p>
+</div>
+
+<div class="review-item strength">
+  <h4><span class="badge badge-green">Fixed — F-01</span> Document ID Mismatch Resolved</h4>
+  <p>Files saved as <code>doc_xxxxx_original_name.pdf</code>. GET, DELETE, and list endpoints now use prefix-glob lookup (<code>UPLOAD_DIR.glob(f"{document_id}_*")</code>) and strip the ID prefix before returning display filenames. Core document CRUD is fully functional.</p>
+</div>
+
+<div class="review-item strength">
+  <h4><span class="badge badge-green">Fixed — F-07</span> Conversation Manager Summarisation LLM Injected</h4>
+  <p>The <code>conversation_manager</code> singleton is now constructed with <code>llm_service=LLMService()</code>. Summarisation triggers correctly when <code>MEMORY_ENABLE_SUMMARISATION=true</code> and the turn threshold is exceeded.</p>
+</div>
+
+<div class="review-item strength">
+  <h4><span class="badge badge-green">Fixed — F-06, F-06b</span> BM25 Event Loop Blocking Resolved</h4>
+  <p>Both <code>_retrieve_hybrid()</code> and <code>_retrieve_bm25_only()</code> in <code>HybridRetriever</code> now offload <code>BM25Retriever.search()</code> to the thread pool via <code>loop.run_in_executor(None, functools.partial(...))</code>. The event loop is no longer blocked under concurrent load.</p>
+</div>
+
+<div class="review-item strength">
+  <h4><span class="badge badge-green">Fixed — F-09</span> Dead Code Removed</h4>
+  <p><code>backend/core/config.py</code> (thin wrappers over settings with zero imports anywhere in the codebase) has been deleted.</p>
+</div>
+
+<div class="review-item weakness">
+  <h4>No Connection Pooling / Client Reuse in LLMService</h4>
+  <p><strong>Problem:</strong> <code>LLMService.__init__</code> creates one <code>httpx.AsyncClient</code> per instance. Multiple components each create their own <code>LLMService()</code>, resulting in multiple connection pools to Ollama. <strong>Impact:</strong> Low-Medium — extra memory + connections. <strong>Fix:</strong> Share a single httpx client via a module-level context or dependency injection.</p>
+</div>
+
+<div class="review-item weakness">
+  <h4>Magic Numbers in Prompts</h4>
+  <p><strong>Problem:</strong> Inline token budgets (<code>max_tokens=5</code>, <code>max_tokens=80</code>, <code>max_tokens=150</code>) are hard-coded in node functions and agents rather than reading from settings. <strong>Impact:</strong> Low — hard to tune without code changes. <strong>Fix:</strong> Add agent-specific token settings to <code>Settings</code>, or at minimum define constants at module top-level.</p>
+</div>
+
+
+<span class="section-anchor" id="strengths"></span>
+<h2>24. Strengths</h2>
+
+<div class="review-item strength">
+  <h4>Incremental Phase Architecture</h4>
+  <p>The 14-phase development approach produces a codebase where each feature is self-contained, individually documented, and independently togglable via settings flags. New engineers can understand the system by reading one phase at a time.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>Comprehensive Settings Centralisation</h4>
+  <p>All configurable parameters — including per-phase tuning knobs — live in a single <code>Settings</code> class. Environment-variable-driven with defaults. This enables zero-code configuration changes in deployment.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>Graceful Degradation Throughout</h4>
+  <p>Redis unavailable → in-process fallback. pdfplumber unavailable → PyPDF2. pytesseract unavailable → empty OCR result. LLM NER fails → regex fallback. llava:7b fails → empty chart description. The system never hard-crashes due to an optional dependency being missing.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>Excellent Tracing Architecture</h4>
+  <p>The <code>trace</code> field in <code>AgentState</code> using <code>Annotated[List[str], operator.add]</code> is an elegant use of LangGraph's built-in reducers to safely accumulate log entries across concurrent node executions. Every node appends its own entry — the full execution trace is always available in the response for debugging.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>HyDE + Hybrid Retrieval Separation</h4>
+  <p>Using HyDE output for FAISS (semantic) while keeping the original query for BM25 (keyword) is architecturally correct and thoughtful. The <code>faiss_query</code> parameter in <code>HybridRetriever.retrieve()</code> makes this separation clean without leaking HyDE into keyword search.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>Dependency Injection in Agent Nodes</h4>
+  <p>Using <code>functools.partial</code> to bind llm/retriever dependencies into node functions at graph construction time keeps nodes as pure, testable functions. This is the correct pattern for LangGraph and enables easy mocking in unit tests.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>Multi-Modal PDF Understanding</h4>
+  <p>The Phase 13+14 PDF extraction pipeline — text + tables (pdfplumber Markdown) + chart descriptions (llava:7b) + OCR fallback — is comprehensive. The chunk_type tagging (<code>text</code>, <code>table</code>, <code>chart</code>) enables downstream filtering or routing by content type.</p>
+</div>
+
+
+<span class="section-anchor" id="weaknesses"></span>
+<h2>25. Weaknesses</h2>
+
+<div class="review-item weakness">
+  <h4>Persistent Metadata Store — Schema Added, Pipeline Integration Pending</h4>
+  <p>SQLAlchemy ORM models (<code>backend/db/models.py</code>) and an Alembic migration now exist. However, the <code>IngestionPipeline</code> does not yet write to these tables, and document list/get endpoints still derive metadata from filesystem <code>stat()</code> calls. <code>chunks_created</code>, <code>page_count</code>, and <code>author</code> are still <code>null</code> in responses until the pipeline is wired to Postgres.</p>
+</div>
+
+<div class="review-item weakness">
+  <h4>Agentic Paths Don't Use Phase 3 Query Understanding</h4>
+  <p>The <code>AgentGraph</code>, <code>RetrievalAgent</code>, and <code>ResearchAgent</code> all implement their own ad-hoc query rewriting/expansion inline. The purpose-built <code>QueryProcessor</code> from Phase 3 is only available via the linear <code>/api/v1/chat</code> endpoint. This creates three separate code paths for query improvement, each with different capabilities and quality.</p>
+</div>
+
+<div class="review-item weakness">
+  <h4>Agent Evaluation Is Heuristic Only</h4>
+  <p>The <code>EvaluationAgent</code> computes scores using heuristics (source overlap ratio, answer length, confidence keywords) rather than the full RAGAS framework used in the evaluation endpoint. <code>eval_agent_use_ragas=False</code> by default. Scores are not comparable with the <code>/api/v1/evaluate</code> endpoint scores.</p>
+</div>
+
+<div class="review-item weakness">
+  <h4>Feedback Data Is Append-Only JSON Lines</h4>
+  <p>Feedback is stored in <code>data/feedback.jsonl</code> — an append-only flat file. There is no API to read, aggregate, or analyse feedback. It cannot be queried to find low-rated answers, track trends, or feed into model improvement workflows.</p>
+</div>
+
+<div class="review-item strength">
+  <h4><span class="badge badge-green">Fixed — Phase 15</span> Async Embedding via run_in_executor</h4>
+  <p>Both <code>embed_documents()</code> and <code>embed_query()</code> in <code>EmbeddingService</code> now delegate to <code>asyncio.get_event_loop().run_in_executor(None, partial(model.encode, ...))</code>. The FastAPI event loop is no longer blocked during CPU-bound embedding generation. <code>embed_batch()</code> is covered transitively.</p>
+</div>
+
+
+<span class="section-anchor" id="missing-features"></span>
+<h2>26. Missing Features</h2>
+
+<table>
+  <tr><th>Missing Feature</th><th>Impact</th><th>Status</th></tr>
+  <tr><td>Persistent metadata store (PostgreSQL)</td><td>High</td><td><span class="badge badge-yellow">Partial</span> — schema + migration added; pipeline write integration pending</td></tr>
+  <tr><td>Document deletion from vector index</td><td>High</td><td><span class="badge badge-green">Done</span> — <code>delete_by_document_id()</code> on FAISS + BM25; wired into DELETE route</td></tr>
+  <tr><td>Integration tests (route-level)</td><td>High</td><td><span class="badge badge-green">Done</span> — 52 new route tests in <code>test_api_routes.py</code>; 203 total passing</td></tr>
+  <tr><td>Rate limiting</td><td>High</td><td><span class="badge badge-green">Done</span> — <code>slowapi</code> per-IP on 5 LLM endpoints; 429 on breach</td></tr>
+  <tr><td>Async embedding</td><td>Medium</td><td><span class="badge badge-green">Done</span> — <code>run_in_executor</code> in both <code>embed_documents</code> and <code>embed_query</code></td></tr>
+  <tr><td>FAISS index compaction</td><td>Medium</td><td><span class="badge badge-green">Done</span> — <code>compact()</code> auto-called on <code>delete_by_document_id()</code></td></tr>
+  <tr><td>LLM factory / singleton cache</td><td>Medium</td><td><span class="badge badge-green">Done</span> — <code>get_llm_service()</code> in <code>llm_service.py</code></td></tr>
+  <tr><td>Streaming for agent/multi-agent endpoints</td><td>Medium</td><td><span class="badge badge-red">Open</span> — both agent endpoints return full JSON only</td></tr>
+  <tr><td>Feedback analytics API</td><td>Medium</td><td><span class="badge badge-red">Open</span> — data written to JSONL but not queryable via API</td></tr>
+  <tr><td>Document update/re-indexing</td><td>Medium</td><td><span class="badge badge-red">Open</span> — no re-process path after upload</td></tr>
+  <tr><td>Pipeline write to Postgres</td><td>Medium</td><td><span class="badge badge-red">Open</span> — schema exists; IngestionPipeline does not persist metadata to DB</td></tr>
+  <tr><td>Multi-tenancy / namespace isolation</td><td>Medium</td><td><span class="badge badge-red">Open</span> — all users share one FAISS + BM25 index</td></tr>
+  <tr><td>Health-gated startup</td><td>Low</td><td><span class="badge badge-red">Open</span> — app starts even if Ollama is not running</td></tr>
+  <tr><td>API versioning beyond v1</td><td>Low</td><td><span class="badge badge-red">Open</span></td></tr>
+  <tr><td>Retry logic on Ollama calls</td><td>Low</td><td><span class="badge badge-red">Open</span></td></tr>
+  <tr><td>Agent/KG unit tests</td><td>High</td><td><span class="badge badge-red">Open</span> — most complex code still has no coverage</td></tr>
+</table>
+
+
+<span class="section-anchor" id="risks"></span>
+<h2>27. Issues &amp; Risks</h2>
+
+<div class="review-item strength">
+  <h4>R1: Vector Index Deletion — <span class="badge badge-green">Resolved</span></h4>
+  <p>The <code>DELETE /api/v1/documents/{document_id}</code> endpoint now calls <code>vector_store.delete_by_document_id()</code> and <code>bm25_retriever.delete_by_document_id()</code>, then persists both indices to disk. Deleted documents no longer appear in future searches. The FAISS soft-delete leaves orphan float vectors in the underlying index (FAISS limitation) — a periodic rebuild is recommended for long-running deployments.</p>
+</div>
+
+<div class="review-item risk">
+  <h4>R2: In-Memory Indexes Lost on Restart</h4>
+  <p><strong>Risk:</strong> FAISS and BM25 indexes are saved to disk at ingestion time, but the singleton instances loaded from disk on startup are the only authoritative copies. If the server crashes mid-ingestion (after adding to memory but before <code>save()</code>), index and disk diverge. <strong>Severity:</strong> Medium.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>R3: Pickle BM25 Security Risk — <span class="badge badge-green">Resolved (F-05)</span></h4>
+  <p>BM25 index now serialised as JSON (<code>bm25_index.json</code>). Legacy <code>.pkl</code> files are read-only for one-time migration and are never written. The pickle RCE vector is eliminated.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>R4: Hardcoded Demo Credentials — <span class="badge badge-green">Resolved (F-02)</span></h4>
+  <p>Credentials are now loaded from <code>settings.auth_admin_password</code> / <code>settings.auth_user_password</code> (sourced from <code>.env</code>). Password comparison uses <code>hmac.compare_digest()</code>. The <code>_DEMO_USERS</code> hardcoded dict no longer exists.</p>
+</div>
+
+<div class="review-item risk">
+  <h4>R5: LangGraph Version Lock</h4>
+  <p><strong>Risk:</strong> The codebase pins <code>langgraph==0.1.19</code>, a very early version. LangGraph's API changed significantly from 0.1.x to 0.2.x and later. Upgrading is a breaking change but staying on 0.1.19 means no bug fixes or performance improvements. <strong>Severity:</strong> Medium (maintenance risk).</p>
+</div>
+
+<div class="review-item risk">
+  <h4>R6: RAGAS Compatibility</h4>
+  <p><strong>Risk:</strong> <code>ragas==0.2.15</code> has specific LangChain version dependencies. The project also pins <code>langchain==0.1.0</code> and <code>langchain-core==0.1.21</code>. Dependency conflicts during pip install are likely in fresh environments — especially on Python 3.11+ with newer transitive dependencies. <strong>Severity:</strong> Medium.</p>
+</div>
+
+
+<span class="section-anchor" id="recommendations"></span>
+<h2>28. Recommendations</h2>
+
+<div class="review-item strength">
+  <h4>REC-1: Metadata Persistence Layer — <span class="badge badge-yellow">In Progress</span></h4>
+  <p><strong>Done:</strong> <code>backend/db/models.py</code> defines ORM models for <code>Document</code>, <code>DocumentChunk</code>, <code>Conversation</code>, <code>ConversationMessage</code>, and <code>Feedback</code>. <code>backend/db/session.py</code> provides sync (Alembic) and async (FastAPI) engines and a <code>get_db()</code> dependency. <code>alembic/versions/001_initial_schema.py</code> creates all tables. Apply with <code>alembic upgrade head</code>.</p>
+  <p><strong>Remaining:</strong> Wire <code>IngestionPipeline</code> to persist <code>Document</code> + <code>DocumentChunk</code> rows on ingestion. Update document list/get endpoints to read from DB instead of filesystem stat.</p>
+  <p><strong>Complexity remaining:</strong> <span class="complexity complexity-med">Medium</span>.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>REC-2: Vector Index Deletion — <span class="badge badge-green">Done</span></h4>
+  <p><strong>Done:</strong> <code>FAISSVectorStore.delete_by_document_id()</code> soft-deletes all chunk vectors for a document. <code>BM25Retriever.delete_by_document_id()</code> filters the corpus and rebuilds the BM25Okapi model. Both are called from <code>DELETE /api/v1/documents/{document_id}</code> and both indices are saved to disk after deletion.</p>
+  <p><strong>Complexity remaining:</strong> <span class="complexity complexity-low">Low</span> — periodic FAISS index compaction (remove soft-deleted float vectors) not yet implemented but not urgent.</p>
+</div>
+
+<div class="review-item rec">
+  <h4>REC-3: Consolidate LLM Abstractions</h4>
+  <p><strong>Why:</strong> Having two parallel LLM abstractions (<code>LLMService</code> and <code>providers/</code>) is confusing and means provider layer improvements don't reach the hot path.</p>
+  <p><strong>Solution:</strong> Refactor <code>LLMService</code> to be a thin wrapper over <code>LLMFactory.create()</code>. The provider implementations already exist — just wire them in.</p>
+  <p><strong>Complexity:</strong> <span class="complexity complexity-med">Medium</span> — requires careful testing of all endpoints after migration.</p>
+</div>
+
+<div class="review-item rec">
+  <h4>REC-4: Replace Pickle Serialisation with JSON for BM25</h4>
+  <p><strong>Why:</strong> Pickle is a security risk and fragile across Python versions. The BM25 data is plain lists of strings and dicts — easily serialisable as JSON.</p>
+  <p><strong>Solution:</strong> Implement a JSON serialisation path in <code>BM25Retriever.save()/load()</code> and rebuild the <code>BM25Okapi</code> index from the corpus on load (same as startup does now).</p>
+  <p><strong>Complexity:</strong> <span class="complexity complexity-low">Low</span> — the corpus is already stored as plain dicts.</p>
+</div>
+
+<div class="review-item rec">
+  <h4>REC-5: Move Route-Level Singletons to FastAPI Dependencies</h4>
+  <p><strong>Why:</strong> Module-level instantiation of <code>RAGChain()</code>, <code>IngestionPipeline()</code>, etc., fails loudly on startup if any dependency is missing, and is untestable.</p>
+  <p><strong>Solution:</strong> Convert to <code>@lru_cache</code> functions exposed as <code>Depends(get_rag_chain)</code> in FastAPI route signatures. This enables lazy init and easy mocking in tests.</p>
+  <p><strong>Complexity:</strong> <span class="complexity complexity-low">Low</span> — mechanical refactor.</p>
+</div>
+
+<div class="review-item rec">
+  <h4>REC-6: Add Rate Limiting</h4>
+  <p><strong>Why:</strong> Without rate limiting, a single client can exhaust Ollama resources, cause OOM, or run up cloud LLM costs.</p>
+  <p><strong>Solution:</strong> Add <code>slowapi</code> (FastAPI-compatible rate limiter) with per-IP limits on <code>/api/v1/chat</code>, <code>/api/v1/agent/chat</code>, and <code>/api/v1/multi-agent/chat</code>.</p>
+  <p><strong>Complexity:</strong> <span class="complexity complexity-low">Low</span>.</p>
+</div>
+
+<div class="review-item rec">
+  <h4>REC-7: Fix Conversation Summarisation</h4>
+  <p><strong>Why:</strong> Long conversations grow unbounded because the LLM is never injected into the singleton manager.</p>
+  <p><strong>Solution:</strong> Either pass the LLM lazily in <code>record_turn()</code> using a <code>get_llm_service()</code> factory, or instantiate <code>ConversationManager</code> within the chat route handler where the LLM is already available.</p>
+  <p><strong>Complexity:</strong> <span class="complexity complexity-low">Low</span>.</p>
+</div>
+
+<div class="review-item strength">
+  <h4>REC-8: Route-Level Integration Tests — <span class="badge badge-green">Done</span></h4>
+  <p><strong>Done:</strong> <code>backend/tests/test_api_routes.py</code> adds 52 tests covering: auth (token, refresh, bad creds, role claims), document upload/list/get/delete/search/stats, chat RAG happy-path (mocked), guardrail block (400 path), streaming, direct chat, admin system-info and clear, and OpenAPI schema completeness. <code>conftest.py</code> provides all shared fixtures. Total suite: 203 tests, 0 failures.</p>
+</div>
+
+<div class="review-item rec">
+  <h4>REC-9: Add Retry Logic for Ollama Calls</h4>
+  <p><strong>Why:</strong> Ollama on CPU can occasionally time out on the first request while loading the model. A single retry would dramatically improve user experience.</p>
+  <p><strong>Solution:</strong> Wrap <code>_generate_ollama()</code> with <code>tenacity.retry(stop=stop_after_attempt(2), wait=wait_fixed(5))</code>.</p>
+  <p><strong>Complexity:</strong> <span class="complexity complexity-low">Low</span>.</p>
+</div>
+
+<div class="review-item rec">
+  <h4>REC-10: Harden Authentication for Any Deployment Beyond localhost</h4>
+  <p><strong>Why:</strong> Hardcoded demo credentials and plain-text password comparison are critical vulnerabilities.</p>
+  <p><strong>Solution (short-term):</strong> Hash demo passwords with bcrypt in <code>auth.py</code>, use constant-time comparison. <strong>Solution (long-term):</strong> Integrate with an identity provider (OAuth2/LDAP/SAML) or at minimum load users from environment variables.</p>
+  <p><strong>Complexity:</strong> <span class="complexity complexity-low">Low</span> (bcrypt) / <span class="complexity complexity-high">High</span> (IdP integration).</p>
+</div>
+
+
+<span class="section-anchor" id="assessment"></span>
+<h2>29. Project Assessment</h2>
+
+<h3>Is the architecture appropriate for the project's goals?</h3>
+<p><strong>Yes, broadly.</strong> The layered architecture — ingestion → retrieval → generation → safety — is the correct structure for an enterprise RAG platform. LangGraph is the right tool for agentic orchestration (declarative, debuggable, supports loops and conditional edges). The settings-driven, phase-tagged approach produces a system that is comprehensible and extensible.</p>
+
+<h3>Areas of Over-Engineering</h3>
+<ul>
+  <li><strong>Multi-agent ecosystem at v1:</strong> A 5-agent pipeline running 15+ LLM calls per query is architecturally ambitious but operationally impractical on CPU-only Ollama. The research path alone takes 4–8 minutes on CPU. This is over-engineered for the current hardware target.</li>
+  <li><strong>Provider abstraction layer:</strong> Building 6 provider implementations (providers/) when only 2 are used (Ollama + OpenAI via LLMService) adds complexity without benefit until the migration from LLMService is completed.</li>
+  <li><strong>Knowledge graph hybrid retriever:</strong> RRF fusion of 4 different result sources (FAISS, BM25, graph, entity lookup) adds significant complexity with diminishing returns for most practical query types.</li>
+</ul>
+
+<h3>Areas of Under-Engineering — Updated Status</h3>
+<ul>
+  <li><span class="badge badge-yellow">Partial</span> <strong>No database schema</strong> — SQLAlchemy ORM + Alembic migration added; pipeline integration pending</li>
+  <li><span class="badge badge-green">Done</span> <strong>No vector index deletion</strong> — <code>delete_by_document_id()</code> implemented on FAISS + BM25 and wired into DELETE route</li>
+  <li><span class="badge badge-green">Done</span> <strong>No API-level tests</strong> — 52 route tests added covering all major endpoints</li>
+  <li><span class="badge badge-green">Done</span> <strong>No startup validation</strong> — JWT secret check added: <code>RuntimeError</code> in production, <code>WARNING</code> in development</li>
+</ul>
+
+<h3>What should be prioritised for refactoring?</h3>
+<ol>
+  <li>Persistent metadata store (enables correct document CRUD)</li>
+  <li>Vector deletion support (correctness)</li>
+  <li>LLM abstraction consolidation (maintainability)</li>
+  <li>Route-level integration tests (confidence in regressions)</li>
+  <li>Rate limiting (production safety)</li>
+</ol>
+
+<h3>What should remain unchanged?</h3>
+<ul>
+  <li>The Settings architecture — well-designed and comprehensive</li>
+  <li>The logging pattern — consistent throughout</li>
+  <li>The guardrails pipeline — well-structured and configurable</li>
+  <li>The AgentGraph node/state structure — clean functional design</li>
+  <li>The hybrid retriever + RRF fusion implementation — correct and well-tested by the existing retrieval patterns</li>
+</ul>
+
+
+<span class="section-anchor" id="roadmap"></span>
+<h2>30. Future Roadmap Suggestions</h2>
+
+<table>
+  <tr><th>Priority</th><th>Feature</th><th>Status</th><th>Rationale</th></tr>
+  <tr><td><span class="badge badge-green">Done</span></td><td>PostgreSQL schema + Alembic migration</td><td>✅ Schema added</td><td>Foundation for durable document metadata</td></tr>
+  <tr><td><span class="badge badge-green">Done</span></td><td>Vector index document deletion</td><td>✅ delete_by_document_id on FAISS + BM25</td><td>Fundamental correctness</td></tr>
+  <tr><td><span class="badge badge-green">Done</span></td><td>Route integration tests (52 new)</td><td>✅ 205 total tests passing</td><td>Regression safety net</td></tr>
+  <tr><td><span class="badge badge-red">P0</span></td><td>Wire IngestionPipeline → Postgres</td><td>Open</td><td>Completes metadata persistence story</td></tr>
+  <tr><td><span class="badge badge-green">Done</span></td><td>Rate limiting (slowapi)</td><td>✅ Per-IP limits on all 5 LLM endpoints</td><td>Production safety baseline</td></tr>
+  <tr><td><span class="badge badge-green">Done</span></td><td>Async embeddings (run_in_executor)</td><td>✅ embed_documents + embed_query</td><td>Event loop no longer blocked during ingestion</td></tr>
+  <tr><td><span class="badge badge-green">Done</span></td><td>FAISS index compaction</td><td>✅ compact() on every document deletion</td><td>Removes soft-deleted float vectors from index</td></tr>
+  <tr><td><span class="badge badge-green">Done</span></td><td>LLM factory (get_llm_service)</td><td>✅ Singleton cache, one httpx client per config</td><td>Eliminates duplicate connections</td></tr>
+  <tr><td><span class="badge badge-blue">P2</span></td><td>Feedback analytics endpoint</td><td>Open</td><td>Enables data-driven model improvement</td></tr>
+  <tr><td><span class="badge badge-blue">P2</span></td><td>Agent streaming (SSE for LangGraph)</td><td>Open</td><td>Better UX for long-running agents</td></tr>
+  <tr><td><span class="badge badge-blue">P2</span></td><td>Agent + KG unit tests</td><td>Open</td><td>Critical code paths with no coverage</td></tr>
+  <tr><td><span class="badge badge-gray">P3</span></td><td>LangGraph version upgrade (0.2+)</td><td>Open</td><td>Access to improved APIs and bug fixes</td></tr>
+  <tr><td><span class="badge badge-gray">P3</span></td><td>HNSW index for FAISS at scale</td><td>Open</td><td>Sub-linear retrieval for large corpora</td></tr>
+  <tr><td><span class="badge badge-gray">P3</span></td><td>Multi-tenant namespace isolation</td><td>Open</td><td>Enterprise use-case requirement</td></tr>
+</table>
+
+<hr />
+
+<div class="callout success">
+  <p class="callout-title">Updated Summary Verdict</p>
+  <p>Phase 15 completes the core production hardening sprint. All P0 gaps are resolved: rate limiting (slowapi), async embedding (run_in_executor), FAISS index compaction, LLM factory singleton, 10 bug fixes (F-01–F-10), Alembic migration, and 203 route tests. The platform now handles concurrent requests without event-loop blocking, defends against per-IP LLM exhaustion, and cleans up deleted vector data automatically. Remaining priorities: wiring the ingestion pipeline to persist metadata to Postgres (medium complexity), agent/KG unit tests (high value, straightforward), and agent streaming SSE (better UX).</p>
+</div>
+
+<div class="doc-footer">
+  <p>Enterprise Agentic RAG Platform v15.0.0 — Documentation updated post Phase 15 production hardening (rate limiting, async embeddings, FAISS compaction, LLM factory) — Made with IBM Bob</p>
+</div>
+
+</div>
+</body>
+</html>

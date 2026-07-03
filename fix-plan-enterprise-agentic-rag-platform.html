@@ -1,0 +1,565 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fix Plan — Enterprise Agentic RAG Platform</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; font-size: 14px; line-height: 1.7; color: #1f2328; background: #fff; }
+  .page { max-width: 860px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 17px; font-weight: 700; margin: 36px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
+  h3 { font-size: 14px; font-weight: 700; margin: 0 0 6px; }
+  p  { margin-bottom: 10px; }
+  ul, ol { margin: 8px 0 10px 20px; }
+  li { margin: 3px 0; }
+  code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 3px; padding: 1px 5px; }
+  pre { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 16px; overflow-x: auto; margin: 10px 0 14px; font-size: 12px; line-height: 1.55; }
+  pre code { background: none; border: none; padding: 0; }
+
+  .subtitle { color: #57606a; font-size: 14px; margin-bottom: 28px; }
+
+  /* TIER HEADERS */
+  .tier { border-radius: 6px; padding: 10px 16px; margin: 32px 0 16px; font-weight: 700; font-size: 13px; letter-spacing: .03em; }
+  .tier-0 { background: #fff0f0; border-left: 5px solid #dc2626; color: #991b1b; }
+  .tier-1 { background: #fffbeb; border-left: 5px solid #d97706; color: #78350f; }
+  .tier-2 { background: #f0f6ff; border-left: 5px solid #3b82d4; color: #1e3a5f; }
+
+  /* FIX CARDS */
+  .card { border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 18px; overflow: hidden; }
+  .card-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #f7f8fa; border-bottom: 1px solid #e5e7eb; }
+  .card-id { font-size: 11px; font-weight: 700; background: #1f2328; color: #fff; border-radius: 4px; padding: 2px 7px; flex-shrink: 0; }
+  .card-title { font-size: 14px; font-weight: 700; flex: 1; }
+  .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+  .badge-low  { background: #dcfce7; color: #15803d; }
+  .badge-med  { background: #fef3c7; color: #92400e; }
+  .badge-high { background: #fee2e2; color: #b91c1c; }
+  .card-body { padding: 14px 16px; }
+  .card-body p:last-child { margin-bottom: 0; }
+
+  .meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; font-size: 12px; color: #57606a; }
+  .meta strong { color: #1f2328; }
+
+  /* DIFF BLOCKS */
+  .diff { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; margin: 10px 0 14px; font-size: 12px; font-family: "SFMono-Regular", Consolas, monospace; line-height: 1.55; }
+  .diff-file { background: #e5e7eb; padding: 4px 12px; font-size: 11px; color: #57606a; border-bottom: 1px solid #d1d5db; }
+  .diff-body { padding: 10px 14px; overflow-x: auto; }
+  .del { color: #b91c1c; background: #fff5f5; display: block; }
+  .add { color: #15803d; background: #f0fdf4; display: block; }
+  .ctx { color: #6b7280; display: block; }
+
+  /* STEPS */
+  .steps { counter-reset: step; margin: 10px 0; }
+  .steps li { counter-increment: step; list-style: none; padding-left: 28px; position: relative; margin: 5px 0; }
+  .steps li::before { content: counter(step); position: absolute; left: 0; top: 1px; width: 20px; height: 20px; background: #1f2328; color: #fff; border-radius: 50%; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+  /* SUMMARY TABLE */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th { background: #f7f8fa; border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left; font-weight: 600; }
+  td { border: 1px solid #e5e7eb; padding: 8px 12px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafbfc; }
+
+  .doc-footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #57606a; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Fix Plan — Enterprise Agentic RAG Platform</h1>
+<p class="subtitle">10 grounded, actionable fixes across 3 priority tiers. Each fix states the exact file, the root cause, and the minimal code change required.</p>
+
+
+<h2>Summary</h2>
+<table>
+  <tr><th>#</th><th>Finding</th><th>File(s)</th><th>Effort</th><th>Tier</th></tr>
+  <tr><td>F-01</td><td>Document ID mismatch — GET/DELETE broken after upload</td><td>documents.py</td><td>Low</td><td>🔴 P0</td></tr>
+  <tr><td>F-02</td><td>Hardcoded demo passwords — plain-text comparison</td><td>auth.py, settings.py</td><td>Low</td><td>🔴 P0</td></tr>
+  <tr><td>F-03</td><td>Admin clear endpoint unprotected by auth middleware</td><td>admin.py, middleware/auth.py</td><td>Low</td><td>🔴 P0</td></tr>
+  <tr><td>F-04</td><td>Startup warning missing when JWT secret is the default</td><td>main.py, settings.py</td><td>Low</td><td>🔴 P0</td></tr>
+  <tr><td>F-05</td><td>BM25 Pickle serialisation → replace with JSON</td><td>bm25_retriever.py</td><td>Low</td><td>🟡 P1</td></tr>
+  <tr><td>F-06</td><td>BM25 search blocks the async event loop</td><td>hybrid_retriever.py</td><td>Low</td><td>🟡 P1</td></tr>
+  <tr><td>F-07</td><td>Conversation summarisation silently disabled</td><td>conversation_manager.py, chat.py</td><td>Low</td><td>🟡 P1</td></tr>
+  <tr><td>F-08</td><td>Pydantic v1 <code>@validator</code> deprecation warnings</td><td>models/chat.py, models/documents.py</td><td>Low</td><td>🟡 P1</td></tr>
+  <tr><td>F-09</td><td>Dead code — config.py does nothing</td><td>core/config.py</td><td>Low</td><td>🔵 P2</td></tr>
+  <tr><td>F-10</td><td>Route singletons — move to FastAPI Depends</td><td>routes/documents.py, routes/chat.py, routes/agent.py</td><td>Medium</td><td>🔵 P2</td></tr>
+</table>
+
+
+<div class="tier tier-0">🔴 TIER 0 — Correctness &amp; Security — Fix before any non-local deployment</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-01</span>
+    <span class="card-title">Document ID mismatch — GET &amp; DELETE routes are broken</span>
+    <span class="badge badge-low">Effort: Low</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> Upload saves files as <code>doc_xxxxx_originalname.pdf</code> but GET/DELETE look for <code>doc_xxxxx.pdf</code>. They always 404.</span>
+    </div>
+    <div class="meta">
+      <span><strong>Files:</strong> <code>backend/api/routes/documents.py</code> lines 178–180, 231–236, 301–307</span>
+    </div>
+    <p><strong>Fix:</strong> Change list, get, and delete to search the directory with a glob prefix <code>doc_xxxxx_*</code> instead of an exact stem match. Also extract the display filename from the full filename (strip the <code>doc_id_</code> prefix).</p>
+    <div class="diff">
+      <div class="diff-file">backend/api/routes/documents.py — list_documents (line 178)</div>
+      <div class="diff-body">
+<span class="del">-            document_id = file_path.stem          # was whole stem e.g. "doc_abc_report"</span>
+<span class="add">+            # stem is "doc_abc123_report" — the ID is the first segment</span>
+<span class="add">+            document_id = file_path.stem.split("_", 2)[:2]</span>
+<span class="add">+            document_id = "_".join(document_id)      # "doc_abc123"</span>
+<span class="add">+            # Recover the original display filename (strip doc_id_ prefix)</span>
+<span class="add">+            prefix = document_id + "_"</span>
+<span class="add">+            display_name = file_path.name[len(prefix):] if file_path.name.startswith(prefix) else file_path.name</span>
+      </div>
+    </div>
+    <div class="diff">
+      <div class="diff-file">backend/api/routes/documents.py — get_document (line 232)</div>
+      <div class="diff-body">
+<span class="del">-        for ext in ['.pdf', '.docx']:</span>
+<span class="del">-            file_path = UPLOAD_DIR / f"{document_id}{ext}"</span>
+<span class="del">-            if file_path.exists():</span>
+<span class="del">-                document_file = file_path</span>
+<span class="del">-                break</span>
+<span class="add">+        # Files are stored as doc_xxxx_originalname.ext</span>
+<span class="add">+        matches = list(UPLOAD_DIR.glob(f"{document_id}_*"))</span>
+<span class="add">+        document_file = matches[0] if matches else None</span>
+      </div>
+    </div>
+    <div class="diff">
+      <div class="diff-file">backend/api/routes/documents.py — delete_document (line 300)</div>
+      <div class="diff-body">
+<span class="del">-        for ext in ['.pdf', '.docx']:</span>
+<span class="del">-            file_path = UPLOAD_DIR / f"{document_id}{ext}"</span>
+<span class="del">-            if file_path.exists():</span>
+<span class="del">-                file_path.unlink()</span>
+<span class="del">-                deleted = True</span>
+<span class="del">-                break</span>
+<span class="add">+        matches = list(UPLOAD_DIR.glob(f"{document_id}_*"))</span>
+<span class="add">+        if matches:</span>
+<span class="add">+            matches[0].unlink()</span>
+<span class="add">+            deleted = True</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-02</span>
+    <span class="card-title">Hardcoded demo passwords + plain-text comparison</span>
+    <span class="badge badge-low">Effort: Low</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> <code>_DEMO_USERS</code> in <code>auth.py</code> stores plain-text passwords. Comparison uses <code>!=</code> (not constant-time). Anyone reading the repo can authenticate as admin.</span>
+    </div>
+    <div class="meta">
+      <span><strong>Files:</strong> <code>backend/api/routes/auth.py</code> lines 38–41, 72  |  <code>backend/core/settings.py</code></span>
+    </div>
+    <p><strong>Fix (two-step):</strong></p>
+    <ol class="steps">
+      <li>Move credentials to environment variables (<code>.env</code>) so they are never committed.</li>
+      <li>Use <code>hmac.compare_digest</code> (already imported in <code>security.py</code>) for constant-time comparison.</li>
+    </ol>
+    <div class="diff">
+      <div class="diff-file">backend/core/settings.py — add two new fields in the Auth block (after jwt_expire_minutes)</div>
+      <div class="diff-body">
+<span class="add">+    # Demo credentials (Phase 10) — override in .env for any non-local deployment</span>
+<span class="add">+    auth_admin_password: str = "changeme"</span>
+<span class="add">+    auth_user_password:  str = "changeme"</span>
+      </div>
+    </div>
+    <div class="diff">
+      <div class="diff-file">backend/api/routes/auth.py — replace credential store and comparison (lines 36–77)</div>
+      <div class="diff-body">
+<span class="del">-_DEMO_USERS: Dict[str, str] = {</span>
+<span class="del">-    "admin": "changeme",</span>
+<span class="del">-    "user":  "changeme",</span>
+<span class="del">-}</span>
+<span class="add">+import hmac</span>
+<span class="add">+from backend.core.settings import settings</span>
+<span class="add">+</span>
+<span class="add">+def _get_demo_users() -&gt; Dict[str, str]:</span>
+<span class="add">+    """Load credentials from settings (sourced from .env)."""</span>
+<span class="add">+    return {</span>
+<span class="add">+        "admin": settings.auth_admin_password,</span>
+<span class="add">+        "user":  settings.auth_user_password,</span>
+<span class="add">+    }</span>
+<span class="ctx">
+ # in get_token():</span>
+<span class="del">-    if stored_password is None or stored_password != request.password:</span>
+<span class="add">+    demo_users = _get_demo_users()</span>
+<span class="add">+    stored_password = demo_users.get(request.username, "")</span>
+<span class="add">+    if not hmac.compare_digest(stored_password, request.password):</span>
+      </div>
+    </div>
+    <p style="margin-top:10px"><strong>Also add to <code>.env.example</code>:</strong></p>
+    <pre><code># Demo credentials (change before any non-local deployment)
+AUTH_ADMIN_PASSWORD=changeme
+AUTH_USER_PASSWORD=changeme</code></pre>
+  </div>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-03</span>
+    <span class="card-title">Admin clear-vector-stores endpoint unprotected</span>
+    <span class="badge badge-low">Effort: Low</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> <code>/api/v1/admin/*</code> is not in <code>_EXEMPT_PATHS</code>, so the JWT middleware applies when <code>auth_enabled=True</code>. However, admin operations should <em>additionally</em> require the <code>admin</code> role regardless of the global auth flag, so that even when auth is enabled a regular <em>user</em> token cannot wipe all data.</span>
+    </div>
+    <div class="meta">
+      <span><strong>Files:</strong> <code>backend/api/routes/admin.py</code> lines 19–29</span>
+    </div>
+    <p><strong>Fix:</strong> Add a FastAPI dependency that reads <code>request.state.jwt_payload</code> (set by the middleware) and enforces the <code>admin</code> role. When auth is disabled, skip the check (maintains backward compat).</p>
+    <div class="diff">
+      <div class="diff-file">backend/api/routes/admin.py — add role guard dependency</div>
+      <div class="diff-body">
+<span class="add">+from fastapi import Request, Depends</span>
+<span class="add">+from backend.core.settings import settings</span>
+<span class="add">+</span>
+<span class="add">+def require_admin(request: Request) -&gt; None:</span>
+<span class="add">+    """Enforce admin role when auth is enabled."""</span>
+<span class="add">+    if not settings.auth_enabled:</span>
+<span class="add">+        return</span>
+<span class="add">+    payload = getattr(request.state, "jwt_payload", {})</span>
+<span class="add">+    if payload.get("role") != "admin":</span>
+<span class="add">+        from fastapi import HTTPException, status</span>
+<span class="add">+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,</span>
+<span class="add">+                            detail="Admin role required")</span>
+<span class="ctx">
+ @router.post("/clear-vector-stores")</span>
+<span class="del">-async def clear_vector_stores():</span>
+<span class="add">+async def clear_vector_stores(_: None = Depends(require_admin)):</span>
+<span class="ctx">
+ @router.get("/system-info")</span>
+<span class="del">-async def get_system_info():</span>
+<span class="add">+async def get_system_info(_: None = Depends(require_admin)):</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-04</span>
+    <span class="card-title">No startup warning when JWT secret is the insecure default</span>
+    <span class="badge badge-low">Effort: Low</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> <code>jwt_secret_key = "change-me-in-production"</code> is the default. Nothing warns if it's deployed unchanged.</span>
+    </div>
+    <div class="meta">
+      <span><strong>File:</strong> <code>backend/api/main.py</code> — <code>startup_event()</code></span>
+    </div>
+    <div class="diff">
+      <div class="diff-file">backend/api/main.py — inside startup_event()</div>
+      <div class="diff-body">
+<span class="ctx">     logger.info(f"Starting {settings.app_name} v{settings.app_version}")</span>
+<span class="add">+    # Warn loudly if insecure defaults are still in place</span>
+<span class="add">+    _INSECURE_SECRET = "change-me-in-production"</span>
+<span class="add">+    if settings.jwt_secret_key == _INSECURE_SECRET:</span>
+<span class="add">+        if settings.is_production:</span>
+<span class="add">+            raise RuntimeError(</span>
+<span class="add">+                "JWT_SECRET_KEY must be changed from the default before running in production. "</span>
+<span class="add">+                "Set a random 32+ character value in .env."</span>
+<span class="add">+            )</span>
+<span class="add">+        else:</span>
+<span class="add">+            logger.warning(</span>
+<span class="add">+                "SECURITY WARNING: JWT_SECRET_KEY is the default insecure value. "</span>
+<span class="add">+                "Set JWT_SECRET_KEY in .env before any non-local deployment."</span>
+<span class="add">+            )</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="tier tier-1">🟡 TIER 1 — Reliability &amp; Correctness — Fix before load testing or production use</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-05</span>
+    <span class="card-title">BM25 index uses Pickle — replace with JSON</span>
+    <span class="badge badge-low">Effort: Low</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> <code>pickle.dump/load</code> in <code>bm25_retriever.py</code> lines 296–325. Pickle is both a security risk (RCE if file is tampered) and fragile across Python versions.</span>
+    </div>
+    <div class="meta">
+      <span><strong>File:</strong> <code>backend/retrievers/bm25_retriever.py</code> lines 275–345</span>
+    </div>
+    <p>The data stored is already fully JSON-serialisable: lists of dicts with strings. The BM25 model itself is rebuilt in-memory from the token corpus — it doesn't need to be serialised.</p>
+    <p>Change the file extension from <code>.pkl</code> to <code>.json</code>. Update <code>settings.bm25_index_path</code> default accordingly.</p>
+    <div class="diff">
+      <div class="diff-file">backend/retrievers/bm25_retriever.py — save() lines 295–304</div>
+      <div class="diff-body">
+<span class="del">-            # Save using pickle</span>
+<span class="del">-            with open(save_path, 'wb') as f:</span>
+<span class="del">-                pickle.dump(data, f)</span>
+<span class="add">+            import json as _json</span>
+<span class="add">+            save_path = save_path.with_suffix(".json")</span>
+<span class="add">+            with open(save_path, "w", encoding="utf-8") as f:</span>
+<span class="add">+                _json.dump(data, f)</span>
+      </div>
+    </div>
+    <div class="diff">
+      <div class="diff-file">backend/retrievers/bm25_retriever.py — load() lines 316–325</div>
+      <div class="diff-body">
+<span class="del">-            with open(load_path, 'rb') as f:</span>
+<span class="del">-                data = pickle.load(f)</span>
+<span class="add">+            import json as _json</span>
+<span class="add">+            # Support both legacy .pkl and new .json files</span>
+<span class="add">+            json_path = load_path.with_suffix(".json")</span>
+<span class="add">+            actual_path = json_path if json_path.exists() else load_path</span>
+<span class="add">+            with open(actual_path, "r", encoding="utf-8") as f:</span>
+<span class="add">+                data = _json.load(f)</span>
+      </div>
+    </div>
+    <div class="diff">
+      <div class="diff-file">backend/core/settings.py — update default path</div>
+      <div class="diff-body">
+<span class="del">-    bm25_index_path: str = "data/vectorstore/bm25_index.pkl"</span>
+<span class="add">+    bm25_index_path: str = "data/vectorstore/bm25_index.json"</span>
+      </div>
+    </div>
+    <p style="margin-top:8px">Also remove the <code>import pickle</code> at the top of <code>bm25_retriever.py</code> — it will no longer be needed.</p>
+  </div>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-06</span>
+    <span class="card-title">BM25 search blocks the async event loop</span>
+    <span class="badge badge-low">Effort: Low</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> <code>HybridRetriever._retrieve_hybrid()</code> wraps <code>BM25Retriever.search()</code> (CPU-bound sync function) in a trivial <code>async def bm25_search()</code> without <code>run_in_executor</code>. This blocks the event loop during BM25 scoring.</span>
+    </div>
+    <div class="meta">
+      <span><strong>File:</strong> <code>backend/retrievers/hybrid_retriever.py</code> — <code>_retrieve_hybrid()</code></span>
+    </div>
+    <div class="diff">
+      <div class="diff-file">backend/retrievers/hybrid_retriever.py — _retrieve_hybrid()</div>
+      <div class="diff-body">
+<span class="del">-        async def bm25_search():</span>
+<span class="del">-            return self.bm25_retriever.search(</span>
+<span class="del">-                query=query,</span>
+<span class="del">-                top_k=retrieval_k,</span>
+<span class="del">-                min_score=0.0</span>
+<span class="del">-            )</span>
+<span class="add">+        import asyncio</span>
+<span class="add">+        import functools</span>
+<span class="add">+        loop = asyncio.get_event_loop()</span>
+<span class="add">+        async def bm25_search():</span>
+<span class="add">+            return await loop.run_in_executor(</span>
+<span class="add">+                None,</span>
+<span class="add">+                functools.partial(</span>
+<span class="add">+                    self.bm25_retriever.search,</span>
+<span class="add">+                    query=query,</span>
+<span class="add">+                    top_k=retrieval_k,</span>
+<span class="add">+                    min_score=0.0,</span>
+<span class="add">+                )</span>
+<span class="add">+            )</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-07</span>
+    <span class="card-title">Conversation summarisation silently disabled</span>
+    <span class="badge badge-low">Effort: Low</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> <code>conversation_manager = ConversationManager()</code> is instantiated with no LLM, so <code>self._llm = None</code> and summarisation is always skipped. Long sessions grow forever.</span>
+    </div>
+    <div class="meta">
+      <span><strong>Files:</strong> <code>backend/memory/conversation_manager.py</code> (bottom of file)  |  <code>backend/api/routes/chat.py</code> line 23</span>
+    </div>
+    <p><strong>Fix:</strong> Replace the eager module-level singleton with a lazy factory that creates the <code>ConversationManager</code> with an <code>LLMService</code> on first use.</p>
+    <div class="diff">
+      <div class="diff-file">backend/memory/conversation_manager.py — replace bottom of file</div>
+      <div class="diff-body">
+<span class="del">-# Module-level singleton (LLM injected lazily at first use via chat route)</span>
+<span class="del">-conversation_manager = ConversationManager()</span>
+<span class="add">+# Lazy singleton — created with LLM on first call so summarisation works</span>
+<span class="add">+_conversation_manager: Optional[ConversationManager] = None</span>
+<span class="add">+</span>
+<span class="add">+def get_conversation_manager() -&gt; ConversationManager:</span>
+<span class="add">+    global _conversation_manager</span>
+<span class="add">+    if _conversation_manager is None:</span>
+<span class="add">+        from backend.llm.llm_service import LLMService</span>
+<span class="add">+        _conversation_manager = ConversationManager(llm_service=LLMService())</span>
+<span class="add">+    return _conversation_manager</span>
+<span class="add">+</span>
+<span class="add">+# Keep the old name as an alias so existing imports keep working</span>
+<span class="add">+conversation_manager = get_conversation_manager()</span>
+      </div>
+    </div>
+    <p style="margin-top:8px">No change needed in <code>chat.py</code> — it imports <code>conversation_manager</code> from the module, which now resolves to the lazy singleton via the alias.</p>
+    <p><strong>Note:</strong> The lazy call to <code>LLMService()</code> happens once at first request, not at import time, so startup is unaffected if Ollama is down.</p>
+  </div>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-08</span>
+    <span class="card-title">Pydantic v1 <code>@validator</code> deprecation warnings</span>
+    <span class="badge badge-low">Effort: Low</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> <code>backend/api/models/chat.py</code> and <code>backend/api/models/documents.py</code> use <code>@validator</code> (Pydantic v1 API). Pydantic v2 is installed but uses a compatibility shim that prints deprecation warnings on every request.</span>
+    </div>
+    <div class="meta">
+      <span><strong>Files:</strong> <code>backend/api/models/chat.py</code> (3 validators)  |  <code>backend/api/models/documents.py</code> (2 validators)</span>
+    </div>
+    <div class="diff">
+      <div class="diff-file">backend/api/models/chat.py — ChatMessage validator (example; same pattern for all)</div>
+      <div class="diff-body">
+<span class="del">-from pydantic import BaseModel, Field, validator</span>
+<span class="add">+from pydantic import BaseModel, Field, field_validator</span>
+<span class="ctx">
+ class ChatMessage(BaseModel):</span>
+<span class="del">-    @validator('role')</span>
+<span class="del">-    def validate_role(cls, v):</span>
+<span class="del">-        allowed_roles = ['user', 'assistant', 'system']</span>
+<span class="del">-        if v.lower() not in allowed_roles:</span>
+<span class="del">-            raise ValueError(f"Role must be one of: {', '.join(allowed_roles)}")</span>
+<span class="del">-        return v.lower()</span>
+<span class="add">+    @field_validator('role', mode='before')</span>
+<span class="add">+    @classmethod</span>
+<span class="add">+    def validate_role(cls, v: str) -&gt; str:</span>
+<span class="add">+        allowed_roles = ['user', 'assistant', 'system']</span>
+<span class="add">+        if v.lower() not in allowed_roles:</span>
+<span class="add">+            raise ValueError(f"Role must be one of: {', '.join(allowed_roles)}")</span>
+<span class="add">+        return v.lower()</span>
+      </div>
+    </div>
+    <p>Apply the same pattern to all remaining <code>@validator</code> decorators in both model files. The changes are purely mechanical — logic is identical.</p>
+  </div>
+</div>
+
+
+<div class="tier tier-2">🔵 TIER 2 — Code Quality &amp; Maintainability — Fix when time allows</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-09</span>
+    <span class="card-title">Delete dead file — <code>backend/core/config.py</code></span>
+    <span class="badge badge-low">Effort: Low</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> <code>config.py</code> is four thin wrappers (<code>get_settings()</code>, <code>get_database_url()</code>, <code>get_redis_url()</code>, <code>is_development()</code>) over <code>settings.*</code>. No module imports from it. It is pure noise.</span>
+    </div>
+    <div class="meta">
+      <span><strong>File:</strong> <code>backend/core/config.py</code></span>
+    </div>
+    <p><strong>Fix:</strong> Delete the file. Verify nothing imports it first:</p>
+    <pre><code># Run from project root (PowerShell)
+Select-String -Path "backend/**/*.py" -Pattern "from backend.core.config" -Recurse</code></pre>
+    <p>If the output is empty, delete the file:</p>
+    <pre><code>Remove-Item backend\core\config.py</code></pre>
+  </div>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <span class="card-id">F-10</span>
+    <span class="card-title">Move route-level module singletons to FastAPI <code>Depends</code></span>
+    <span class="badge badge-med">Effort: Medium</span>
+  </div>
+  <div class="card-body">
+    <div class="meta">
+      <span><strong>Root cause:</strong> <code>rag_chain = RAGChain()</code>, <code>ingestion_pipeline = IngestionPipeline()</code>, <code>retriever = DocumentRetriever()</code>, and <code>_guardrails = GuardrailsPipeline()</code> are instantiated at module import time. If any constructor throws (e.g. FAISS index missing), the entire app fails to start. They also cannot be mocked in tests.</span>
+    </div>
+    <div class="meta">
+      <span><strong>Files:</strong> <code>routes/documents.py</code>, <code>routes/chat.py</code>, <code>routes/agent.py</code></span>
+    </div>
+    <p><strong>Fix (one file at a time):</strong> Replace module-level instantiation with a cached dependency function. The <code>@lru_cache</code> decorator gives you the singleton behaviour; <code>Depends()</code> gives you testability.</p>
+    <div class="diff">
+      <div class="diff-file">backend/api/routes/documents.py — example pattern (apply to all three files)</div>
+      <div class="diff-body">
+<span class="del">-# Initialize services</span>
+<span class="del">-ingestion_pipeline = IngestionPipeline()</span>
+<span class="del">-retriever = DocumentRetriever()</span>
+<span class="add">+from functools import lru_cache</span>
+<span class="add">+from fastapi import Depends</span>
+<span class="add">+</span>
+<span class="add">+@lru_cache(maxsize=1)</span>
+<span class="add">+def get_ingestion_pipeline() -&gt; IngestionPipeline:</span>
+<span class="add">+    return IngestionPipeline()</span>
+<span class="add">+</span>
+<span class="add">+@lru_cache(maxsize=1)</span>
+<span class="add">+def get_retriever() -&gt; DocumentRetriever:</span>
+<span class="add">+    return DocumentRetriever()</span>
+<span class="ctx">
+ # Update route signatures:</span>
+<span class="del">-async def upload_document(background_tasks: BackgroundTasks, file: UploadFile = File(...)):</span>
+<span class="add">+async def upload_document(</span>
+<span class="add">+    background_tasks: BackgroundTasks,</span>
+<span class="add">+    file: UploadFile = File(...),</span>
+<span class="add">+    pipeline: IngestionPipeline = Depends(get_ingestion_pipeline),</span>
+<span class="add">+):</span>
+      </div>
+    </div>
+    <p style="margin-top:8px"><strong>Sequence:</strong> Tackle <code>documents.py</code> first (most critical — it has two singletons). Then <code>chat.py</code> (<code>RAGChain</code> + <code>GuardrailsPipeline</code>). Then <code>agent.py</code> (already uses lazy <code>_get_graph()</code> pattern — keep as-is).</p>
+  </div>
+</div>
+
+
+<h2>Recommended Execution Order</h2>
+<ol class="steps" style="margin:0 0 20px 0">
+  <li><strong>F-01</strong> — Document ID mismatch (fixes broken CRUD, visible bug)</li>
+  <li><strong>F-04</strong> — Startup secret warning (1 minute, prevents future incidents)</li>
+  <li><strong>F-02</strong> — Auth password hardening (env vars + constant-time compare)</li>
+  <li><strong>F-03</strong> — Admin role guard (add <code>require_admin</code> dependency)</li>
+  <li><strong>F-05</strong> — BM25 JSON serialisation (delete old <code>.pkl</code>, write new <code>.json</code>)</li>
+  <li><strong>F-06</strong> — BM25 async fix (one-line <code>run_in_executor</code> change)</li>
+  <li><strong>F-07</strong> — Conversation summarisation (lazy LLM injection)</li>
+  <li><strong>F-08</strong> — Pydantic v2 validators (mechanical, zero-risk)</li>
+  <li><strong>F-09</strong> — Delete dead <code>config.py</code></li>
+  <li><strong>F-10</strong> — Route singletons → Depends (tackle one route file per session)</li>
+</ol>
+
+<p>F-01 through F-08 are all independent — they can be done in separate commits without touching each other. F-10 is the only multi-file refactor and should be done last, since it changes call signatures across route files.</p>
+
+<h2>Validation After Each Fix</h2>
+<pre><code># After every fix — run this from the project root (venv activated)
+.\venv\Scripts\python.exe -c "from backend.api.main import app; print('imports OK')"
+
+# For F-01 specifically: upload a test document, then GET /api/v1/documents
+# and verify the returned document_id can be passed to DELETE.
+
+# After F-05: delete data/vectorstore/bm25_index.pkl, restart,
+# re-upload a doc, verify data/vectorstore/bm25_index.json is created.
+
+# Run unit tests after F-07 and F-08
+.\venv\Scripts\pytest backend/tests/ -v --tb=short</code></pre>
+
+<div class="doc-footer">Made with IBM Bob</div>
+</div>
+</body>
+</html>

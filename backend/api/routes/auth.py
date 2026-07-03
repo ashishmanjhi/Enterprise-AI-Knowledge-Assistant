@@ -18,6 +18,7 @@ Set AUTH_ENABLED=true in .env to enforce JWT on all API routes.
 
 from __future__ import annotations
 
+import hmac
 from datetime import timedelta
 from typing import Dict
 
@@ -33,12 +34,16 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-# ── Demo credential store — replace with a real DB in production ──────────
+# ── Demo credential store — credentials sourced from settings (.env) ─────
+# Never commit real passwords. Set AUTH_ADMIN_PASSWORD / AUTH_USER_PASSWORD
+# in your .env file before any non-local deployment.
 
-_DEMO_USERS: Dict[str, str] = {
-    "admin": "changeme",
-    "user":  "changeme",
-}
+def _get_demo_users() -> Dict[str, str]:
+    """Return credential map sourced from settings (loaded from .env)."""
+    return {
+        "admin": settings.auth_admin_password,
+        "user":  settings.auth_user_password,
+    }
 
 
 # ── Request / Response models ─────────────────────────────────────────────
@@ -68,8 +73,10 @@ async def get_token(request: TokenRequest) -> TokenResponse:
     The token must be sent as ``Authorization: Bearer <token>`` on all
     protected routes when ``AUTH_ENABLED=true``.
     """
-    stored_password = _DEMO_USERS.get(request.username)
-    if stored_password is None or stored_password != request.password:
+    demo_users = _get_demo_users()
+    stored_password = demo_users.get(request.username, "")
+    # Use constant-time comparison to prevent timing-based username enumeration
+    if not hmac.compare_digest(stored_password, request.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",

@@ -5,7 +5,7 @@ Implements the BM25 algorithm for efficient keyword matching.
 
 from typing import List, Dict, Any, Optional
 from pathlib import Path
-import pickle
+import json
 import time
 from rank_bm25 import BM25Okapi
 from backend.core.logging import get_logger
@@ -274,80 +274,143 @@ class BM25Retriever:
     
     def save(self, path: Optional[str] = None) -> None:
         """
-        Save BM25 index to disk.
-        
+        Save BM25 index to disk as JSON (F-05: replaced pickle).
+
         Args:
-            path: Path to save index (uses default if not provided)
+            path: Path to save index (uses default if not provided).
+                  The extension is normalised to .json regardless of what is passed.
         """
-        save_path = Path(path) if path else self.index_path
+        # Always write to .json — ignore whatever extension was passed
+        base = Path(path) if path else self.index_path
+        save_path = base.with_suffix(".json")
         save_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         try:
-            # Prepare data for serialization
             data = {
-                "documents": [doc.to_dict() for doc in self.documents],
+                "documents":       [doc.to_dict() for doc in self.documents],
                 "doc_id_to_index": self.doc_id_to_index,
-                "k1": self.k1,
-                "b": self.b,
-                "version": "1.0"
+                "k1":              self.k1,
+                "b":               self.b,
+                "version":         "2.0",   # 2.0 = JSON format
             }
-            
-            # Save using pickle
-            with open(save_path, 'wb') as f:
-                pickle.dump(data, f)
-            
-            logger.info(f"Saved BM25 index to {save_path}")
-            logger.info(f"Index contains {len(self.documents)} documents")
-            
+            with open(save_path, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+            logger.info(f"Saved BM25 index to {save_path} ({len(self.documents)} documents)")
         except Exception as e:
             logger.error(f"Failed to save BM25 index: {e}")
             raise
     
     def load(self, path: Optional[str] = None) -> bool:
         """
-        Load BM25 index from disk.
-        
+        Load BM25 index from disk (F-05: JSON-first, legacy .pkl fallback).
+
+        Resolution order:
+          1. <path>.json  (new JSON format)
+          2. <path>       as-is (caller passed an explicit .json already)
+          3. <base>.pkl   (legacy pickle — supported read-only for migration)
+
         Args:
-            path: Path to load index from (uses default if not provided)
-            
+            path: Path to load index from (uses default if not provided).
+
         Returns:
-            True if loaded successfully, False otherwise
+            True if loaded successfully, False otherwise.
         """
-        load_path = Path(path) if path else self.index_path
-        
-        if not load_path.exists():
-            logger.warning(f"BM25 index file not found: {load_path}")
+        base = Path(path) if path else self.index_path
+
+        # Determine which file to actually read
+        json_path = base.with_suffix(".json")
+        pkl_path  = base.with_suffix(".pkl")
+
+        if json_path.exists():
+            actual_path = json_path
+            use_json = True
+        elif base.exists() and base.suffix == ".json":
+            actual_path = base
+            use_json = True
+        elif pkl_path.exists():
+            actual_path = pkl_path
+            use_json = False
+            logger.warning(
+                f"Loading legacy pickle index from {actual_path}. "
+                "Re-upload documents to migrate to the JSON format."
+            )
+        else:
+            logger.warning(f"BM25 index file not found at {base} (tried .json and .pkl)")
             return False
-        
+
         try:
-            # Load data
-            with open(load_path, 'rb') as f:
-                data = pickle.load(f)
-            
-            # Restore documents
+            if use_json:
+                with open(actual_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                import pickle  # import only for legacy read
+                with open(actual_path, "rb") as f:
+                    data = pickle.load(f)  # noqa: S301 — legacy migration path only
+
             self.documents = [
                 BM25Document.from_dict(doc_data)
                 for doc_data in data["documents"]
             ]
-            
             self.doc_id_to_index = data["doc_id_to_index"]
             self.k1 = data.get("k1", self.k1)
-            self.b = data.get("b", self.b)
-            
-            # Rebuild BM25 index
+            self.b  = data.get("b",  self.b)
+
+            # Rebuild the in-memory BM25 model from the token corpus
             if self.documents:
                 corpus = [doc.tokens for doc in self.documents]
                 self.bm25 = BM25Okapi(corpus, k1=self.k1, b=self.b)
-            
-            logger.info(f"Loaded BM25 index from {load_path}")
-            logger.info(f"Index contains {len(self.documents)} documents")
-            
+
+            logger.info(
+                f"Loaded BM25 index from {actual_path} "
+                f"({len(self.documents)} documents)"
+            )
             return True
-            
+
         except Exception as e:
-            logger.error(f"Failed to load BM25 index: {e}")
+            logger.error(f"Failed to load BM25 index from {actual_path}: {e}")
             return False
     
+    def delete_by_document_id(self, document_id: str) -> int:
+        """
+        Remove all chunks that belong to a given document from the BM25 index.
+
+        Because BM25Okapi is rebuilt from scratch on every ``add_documents``
+        call, true deletion requires rebuilding the corpus without the removed
+        documents.  This method filters them out and re-fits the model.
+
+        Args:
+            document_id: The document_id whose chunks should be removed.
+
+        Returns:
+            Number of chunks removed.
+        """
+        before = len(self.documents)
+        self.documents = [
+            doc for doc in self.documents
+            if doc.metadata.get("document_id") != document_id
+        ]
+        removed = before - len(self.documents)
+
+        if removed == 0:
+            logger.info(f"No BM25 chunks found for document_id={document_id}")
+            return 0
+
+        # Rebuild the doc_id→index map and the BM25 model from the filtered corpus
+        self.doc_id_to_index = {
+            doc.doc_id: idx for idx, doc in enumerate(self.documents)
+        }
+        if self.documents:
+            corpus = [doc.tokens for doc in self.documents]
+            self.bm25 = BM25Okapi(corpus, k1=self.k1, b=self.b)
+        else:
+            self.bm25 = None
+
+        logger.info(
+            f"Removed {removed} BM25 chunks for document_id={document_id}. "
+            f"Remaining: {len(self.documents)}"
+        )
+        return removed
+
     def clear(self) -> None:
         """Clear the BM25 index."""
         self.bm25 = None
