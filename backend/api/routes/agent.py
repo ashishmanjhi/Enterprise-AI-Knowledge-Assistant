@@ -12,11 +12,14 @@ selection, query rewriting, document grading, and grounding verification.
 
 from __future__ import annotations
 
+import json
+import time
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from backend.agents.graph import AgentGraph
@@ -105,12 +108,10 @@ async def agent_chat(request: Request, body: AgentChatRequest) -> AgentChatRespo
     retrieval, document grading, generation, and grounding verification.
     Returns the final answer with full trace metadata.
     """
-    import time
-
     conversation_id = body.conversation_id or f"agent_{uuid.uuid4().hex[:12]}"
-    start = time.time()
 
     try:
+        start = time.time()
         graph = _get_graph()
 
         # Build initial state
@@ -180,6 +181,103 @@ async def agent_chat(request: Request, body: AgentChatRequest) -> AgentChatRespo
     except Exception as exc:
         logger.error(f"agent_chat failed: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Agent chat failed: {exc}")
+
+
+# ── Streaming endpoint ────────────────────────────────────────────────────
+
+@limiter.limit(settings.rate_limit_agent_stream)
+@router.post("/chat/stream")
+async def agent_chat_stream(request: Request, body: AgentChatRequest) -> StreamingResponse:
+    """
+    Agentic RAG chat — SSE streaming variant.
+
+    Streams three event types as newline-delimited JSON over
+    ``text/event-stream``:
+
+    ``{"type": "node", "node": "<name>", "data": {...}}``
+        One event per LangGraph node completion carrying the partial
+        state update produced by that node.
+
+    ``{"type": "token", "content": "word "}``
+        Word-level events for the generation node's answer text,
+        enabling a live typing effect in the UI.
+
+    ``{"type": "done", "data": {...AgentChatResponse fields...}}``
+        Terminal event with the fully assembled response payload.
+        The client should parse this to persist sources, trace, and
+        metadata in session state.
+    """
+    conversation_id = body.conversation_id or f"agent_{uuid.uuid4().hex[:12]}"
+    start = time.time()
+
+    initial_state: dict = {
+        "query":                body.message,
+        "top_k":               body.top_k,
+        "temperature":         body.temperature,
+        "max_tokens":          body.max_tokens,
+        "use_reranking":       body.use_reranking if body.use_reranking is not None
+                               else settings.enable_reranking,
+        "conversation_history": body.conversation_history or [],
+        "trace":               [],
+    }
+    if body.retrieval_method:
+        initial_state["retrieval_method"] = body.retrieval_method
+
+    async def _generate():
+        try:
+            graph = _get_graph()
+            async for event in graph.stream_run(initial_state):
+                if event["type"] == "done":
+                    # Build the full response payload for the terminal event
+                    fs = event["data"]
+                    docs     = fs.get("documents", [])
+                    metadata = fs.get("metadata", {})
+                    elapsed  = round(time.time() - start, 3)
+
+                    sources = [
+                        {
+                            "chunk_id":         d.get("chunk_id",       "unknown"),
+                            "document_id":      d.get("document_id",    "unknown"),
+                            "filename":         d.get("filename",        "unknown"),
+                            "content":          (d.get("content", "")[:200] + "..."
+                                                 if len(d.get("content", "")) > 200
+                                                 else d.get("content", "")),
+                            "score":            round(d.get("score", 0.0), 4),
+                            "page_number":      d.get("page_number"),
+                            "retrieval_method": d.get("retrieval_method"),
+                            "faiss_score":      d.get("faiss_score"),
+                            "bm25_score":       d.get("bm25_score"),
+                        }
+                        for d in docs
+                    ]
+
+                    done_payload = {
+                        "conversation_id":  conversation_id,
+                        "answer":           fs.get("generation") or "",
+                        "sources":          sources,
+                        "retrieval_method": fs.get("retrieval_method"),
+                        "is_grounded":      fs.get("is_grounded"),
+                        "rewrite_count":    fs.get("rewrite_count", 0),
+                        "rewritten_query":  fs.get("rewritten_query"),
+                        "trace":            fs.get("trace", []),
+                        "model":            metadata.get("model", "unknown"),
+                        "tokens_used":      metadata.get("tokens_used", 0),
+                        "processing_time":  elapsed,
+                    }
+                    yield f"data: {json.dumps({'type': 'done', 'data': done_payload})}\n\n"
+                    logger.info(
+                        f"agent_chat_stream: conv={conversation_id} "
+                        f"rewrite_count={fs.get('rewrite_count', 0)} "
+                        f"is_grounded={fs.get('is_grounded')} "
+                        f"sources={len(sources)} time={elapsed}s"
+                    )
+                else:
+                    yield f"data: {json.dumps(event)}\n\n"
+        except Exception as exc:
+            logger.error(f"agent_chat_stream failed: {exc}", exc_info=True)
+            yield f"data: {json.dumps({'type': 'error', 'detail': str(exc)})}\n\n"
+
+    return StreamingResponse(_generate(), media_type="text/event-stream")
 
 
 @router.get("/health")

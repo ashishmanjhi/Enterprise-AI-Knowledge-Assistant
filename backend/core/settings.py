@@ -211,8 +211,9 @@ class Settings(BaseSettings):
     rate_limit_chat:        str  = "20/minute"   # POST /api/v1/chat
     rate_limit_stream:      str  = "10/minute"   # POST /api/v1/chat/stream
     rate_limit_direct:      str  = "30/minute"   # POST /api/v1/chat/direct
-    rate_limit_agent:       str  = "10/minute"   # POST /api/v1/agent/chat
-    rate_limit_multi_agent: str  = "5/minute"    # POST /api/v1/multi-agent/chat
+    rate_limit_agent:        str  = "10/minute"   # POST /api/v1/agent/chat
+    rate_limit_agent_stream: str  = "10/minute"   # POST /api/v1/agent/chat/stream
+    rate_limit_multi_agent:  str  = "5/minute"    # POST /api/v1/multi-agent/chat
 
     # CORS
     cors_origins: list[str] = ["http://localhost:8501", "http://localhost:3000"]

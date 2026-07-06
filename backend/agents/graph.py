@@ -43,7 +43,7 @@ Usage
 from __future__ import annotations
 
 import functools
-from typing import Any, Dict, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 
 from langgraph.graph import END, StateGraph
 
@@ -180,6 +180,67 @@ class AgentGraph:
                 initial_state, config=config or None
             )
         return final_state
+
+    async def stream_run(
+        self, initial_state: Dict[str, Any]
+    ) -> AsyncIterator[Dict[str, Any]]:
+        """Stream graph execution as SSE-ready dicts.
+
+        Yields one dict per event in three forms:
+
+        ``{"type": "node", "node": str, "data": dict}``
+            Emitted as each graph node completes with its partial state update.
+
+        ``{"type": "token", "content": str}``
+            Word-level events for the answer text produced by the generate node
+            (provides a live "typing" effect without refactoring the node).
+
+        ``{"type": "done", "data": dict}``
+            Final event carrying the accumulated AgentState so the caller can
+            assemble a full AgentChatResponse.
+
+        Parameters
+        ----------
+        initial_state :
+            Same contract as ``run()`` — must contain ``"query"``.
+        """
+        query = initial_state.get("query", "")
+        logger.info(f"AgentGraph.stream_run: query='{query[:80]}'")
+
+        config: Dict[str, Any] = {}
+        cbs = langsmith_callbacks()
+        if cbs:
+            config["callbacks"] = cbs
+
+        final_state: Dict[str, Any] = {}
+
+        async with trace_span("agent.stream_run", {"query": query[:120]}):
+            async for chunk in self._graph.astream(  # type: ignore[union-attr]
+                initial_state,
+                config=config or None,
+                stream_mode="updates",
+            ):
+                # chunk = {"node_name": {partial_state_updates}}
+                node_name: str = next(iter(chunk))
+                updates: Dict[str, Any] = chunk[node_name] or {}
+
+                # Accumulate state so the "done" payload is complete
+                final_state.update(updates)
+
+                yield {"type": "node", "node": node_name, "data": updates}
+
+                # For the generate node emit the answer word-by-word so the
+                # client can show a live typing effect without per-token refactor.
+                if node_name == "generate":
+                    generation: str = updates.get("generation") or ""
+                    for word in generation.split():
+                        yield {"type": "token", "content": word + " "}
+
+        # Ensure the original query is present in the done payload
+        if "query" not in final_state:
+            final_state["query"] = query
+
+        yield {"type": "done", "data": final_state}
 
 
 # Made with Bob

@@ -4,15 +4,14 @@ Runs the full LangGraph pipeline:
   route_query → (rewrite_query) → retrieve → grade_documents
               → generate → check_grounding
 
-Shows the graph trace, rewrite count, retrieval strategy chosen by the agent,
-and the grounding verdict alongside each answer.
+Shows live node-progress events and word-by-word generation via SSE streaming.
+Falls back to the non-streaming /chat endpoint on SSE failure.
 """
 
 import json
 import time
 import requests
 import streamlit as st
-from datetime import datetime
 
 API_BASE_URL = "http://localhost:8000"
 
@@ -196,89 +195,138 @@ if prompt := st.chat_input("Ask a question about your documents (agent mode)…"
         payload["retrieval_method"] = retrieval_method
 
     with st.chat_message("assistant"):
-        placeholder = st.empty()
-        placeholder.markdown("_Thinking…_")
+        node_status   = st.empty()   # live node-progress line
+        placeholder   = st.empty()   # streaming answer text
+        node_status.markdown("_Starting agent…_")
+
+        # Accumulated state from SSE events
+        streamed_text   = ""
+        done_data: dict = {}
+        sse_ok          = False
 
         try:
-            resp = requests.post(
-                f"{API_BASE_URL}/api/v1/agent/chat",
+            with requests.post(
+                f"{API_BASE_URL}/api/v1/agent/chat/stream",
                 json=payload,
+                stream=True,
                 timeout=300,
-            )
+            ) as resp:
+                if resp.status_code == 429:
+                    node_status.empty()
+                    placeholder.warning("⚠️ Rate limit reached. Please wait a moment.")
+                elif resp.status_code != 200:
+                    node_status.empty()
+                    placeholder.error(f"❌ Error {resp.status_code}: {resp.text[:200]}")
+                else:
+                    for raw_line in resp.iter_lines():
+                        if not raw_line:
+                            continue
+                        # SSE lines begin with "data: "
+                        line = raw_line.decode("utf-8") if isinstance(raw_line, bytes) else raw_line
+                        if not line.startswith("data: "):
+                            continue
+                        payload_str = line[len("data: "):]
+                        try:
+                            event = json.loads(payload_str)
+                        except json.JSONDecodeError:
+                            continue
 
-            if resp.status_code == 200:
-                data = resp.json()
-                answer          = data.get("answer", "")
-                sources         = data.get("sources", [])
-                trace           = data.get("trace", [])
-                is_grounded     = data.get("is_grounded")
-                rewrite_count   = data.get("rewrite_count", 0)
-                rewritten_query = data.get("rewritten_query")
-                ret_method      = data.get("retrieval_method", "")
-                model           = data.get("model", "unknown")
-                tokens_used     = data.get("tokens_used", 0)
-                proc_t          = data.get("processing_time", 0.0)
+                        etype = event.get("type")
 
-                placeholder.markdown(answer)
-                _render_sources(sources)
-                if show_trace:
-                    _render_trace(trace)
+                        if etype == "node":
+                            node_name = event.get("node", "")
+                            _NODE_LABELS = {
+                                "route_query":      "🔀 Routing query…",
+                                "rewrite_query":    "✏️ Rewriting query…",
+                                "retrieve":         "🔍 Retrieving documents…",
+                                "grade_documents":  "📋 Grading documents…",
+                                "generate":         "💬 Generating answer…",
+                                "check_grounding":  "✅ Checking grounding…",
+                            }
+                            node_status.markdown(
+                                _NODE_LABELS.get(node_name, f"⚙️ {node_name}…")
+                            )
 
-                # Meta caption
-                parts = []
-                if ret_method:
-                    icon = {"hybrid": "🔀", "faiss": "🧠", "bm25": "🔤"}.get(ret_method, "🔍")
-                    parts.append(f"{icon} {ret_method}")
-                if rewrite_count:
-                    parts.append(f"✏️ {rewrite_count} rewrite{'s' if rewrite_count > 1 else ''}")
-                if show_grounding:
-                    gb = _grounding_badge(is_grounded)
-                    if gb:
-                        parts.append(gb)
-                if rewritten_query:
-                    parts.append(f'rewrote → *"{rewritten_query[:60]}"*')
-                parts.append(f"⏱ {proc_t:.2f}s")
-                parts.append(f"🤖 {model}")
-                if tokens_used:
-                    parts.append(f"🔢 {tokens_used} tokens")
-                st.caption(" | ".join(parts))
+                        elif etype == "token":
+                            streamed_text += event.get("content", "")
+                            placeholder.markdown(streamed_text + "▌")
 
-                # Persist message
-                st.session_state.agent_messages.append({
-                    "role": "assistant",
-                    "content": answer,
-                    "sources": sources,
-                    "trace": trace,
-                    "meta": {
-                        "retrieval_method": ret_method,
-                        "rewrite_count": rewrite_count,
-                        "rewritten_query": rewritten_query,
-                        "is_grounded": is_grounded,
-                        "processing_time": proc_t,
-                        "model": model,
-                        "tokens_used": tokens_used,
-                    },
-                })
+                        elif etype == "done":
+                            done_data = event.get("data", {})
+                            sse_ok = True
+                            # Remove cursor on completion
+                            placeholder.markdown(streamed_text)
+                            node_status.empty()
 
-            elif resp.status_code == 400:
-                detail = resp.json().get("detail", "Request blocked")
-                placeholder.error(f"🛡️ Blocked: {detail}")
-                st.session_state.agent_messages.append({
-                    "role": "assistant",
-                    "content": f"🛡️ Blocked: {detail}",
-                    "sources": [],
-                    "trace": [],
-                    "meta": {},
-                })
-            else:
-                placeholder.error(f"❌ Error {resp.status_code}: {resp.text[:200]}")
+                        elif etype == "error":
+                            node_status.empty()
+                            placeholder.error(
+                                f"❌ Agent error: {event.get('detail', 'unknown')}"
+                            )
 
         except requests.exceptions.ConnectionError:
-            placeholder.error("❌ Cannot reach backend. Is `uvicorn backend.api.main:app --reload` running?")
+            placeholder.error(
+                "❌ Cannot reach backend. Is `uvicorn backend.api.main:app --reload` running?"
+            )
         except requests.exceptions.Timeout:
-            placeholder.error("⏱ Request timed out (LLM may be slow on CPU). Try a shorter query.")
+            placeholder.error(
+                "⏱ Request timed out (LLM may be slow on CPU). Try a shorter query."
+            )
         except Exception as exc:
             placeholder.error(f"❌ Unexpected error: {exc}")
+
+        if sse_ok and done_data:
+            answer          = done_data.get("answer", streamed_text)
+            sources         = done_data.get("sources", [])
+            trace           = done_data.get("trace", [])
+            is_grounded     = done_data.get("is_grounded")
+            rewrite_count   = done_data.get("rewrite_count", 0)
+            rewritten_query = done_data.get("rewritten_query")
+            ret_method      = done_data.get("retrieval_method", "")
+            model           = done_data.get("model", "unknown")
+            tokens_used     = done_data.get("tokens_used", 0)
+            proc_t          = done_data.get("processing_time", 0.0)
+
+            # Render sources and trace below the answer
+            _render_sources(sources)
+            if show_trace:
+                _render_trace(trace)
+
+            # Meta caption
+            parts = []
+            if ret_method:
+                icon = {"hybrid": "🔀", "faiss": "🧠", "bm25": "🔤"}.get(ret_method, "🔍")
+                parts.append(f"{icon} {ret_method}")
+            if rewrite_count:
+                parts.append(f"✏️ {rewrite_count} rewrite{'s' if rewrite_count > 1 else ''}")
+            if show_grounding:
+                gb = _grounding_badge(is_grounded)
+                if gb:
+                    parts.append(gb)
+            if rewritten_query:
+                parts.append(f'rewrote → *"{rewritten_query[:60]}"*')
+            parts.append(f"⏱ {proc_t:.2f}s")
+            parts.append(f"🤖 {model}")
+            if tokens_used:
+                parts.append(f"🔢 {tokens_used} tokens")
+            st.caption(" | ".join(parts))
+
+            # Persist message in session
+            st.session_state.agent_messages.append({
+                "role":    "assistant",
+                "content": answer,
+                "sources": sources,
+                "trace":   trace,
+                "meta": {
+                    "retrieval_method": ret_method,
+                    "rewrite_count":    rewrite_count,
+                    "rewritten_query":  rewritten_query,
+                    "is_grounded":      is_grounded,
+                    "processing_time":  proc_t,
+                    "model":            model,
+                    "tokens_used":      tokens_used,
+                },
+            })
 
 # ── Footer info ────────────────────────────────────────────────────────────
 
