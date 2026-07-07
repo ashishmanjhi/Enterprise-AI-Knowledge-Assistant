@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     default_temperature: float = 0.7
     default_max_tokens: int = 512
     
+    # Multi-Tenancy (Phase 15)
+    multi_tenancy_enabled: bool = False          # set True to isolate indexes per tenant
+    tenant_id_header:      str  = "X-Tenant-ID"  # request header that carries the tenant slug
+    default_tenant_id:     str  = "default"       # fallback when header is absent / feature is off
+
     # RAG Configuration (Phase 1)
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_dimension: int = 384

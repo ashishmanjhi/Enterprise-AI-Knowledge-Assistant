@@ -25,6 +25,8 @@ from backend.guardrails.pipeline import GuardrailsPipeline
 from backend.core.logging import get_logger
 from backend.core.settings import settings
 from backend.api.middleware.rate_limit import limiter
+from backend.api.middleware.tenant import resolve_tenant_id
+from backend.retrievers.tenant_registry import get_retriever_for_tenant
 
 logger = get_logger(__name__)
 
@@ -36,14 +38,24 @@ router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 # and crashed startup when FAISS index was missing.
 
 from functools import lru_cache  # noqa: E402
-
-@lru_cache(maxsize=1)
-def _get_rag_chain() -> RAGChain:
-    return RAGChain()
+from typing import Dict  # noqa: E402
 
 @lru_cache(maxsize=1)
 def _get_guardrails() -> GuardrailsPipeline:
     return GuardrailsPipeline()
+
+# Per-tenant RAGChain cache — keyed by tenant_id string.
+# When multi-tenancy is disabled, only the "default" key is ever written,
+# giving identical behaviour to the previous lru_cache(maxsize=1) singleton.
+_rag_chain_cache: Dict[str, RAGChain] = {}
+
+
+def _get_rag_chain(tenant_id: str = "default") -> RAGChain:
+    """Return a RAGChain wired to the tenant's retriever, creating it once per tenant."""
+    if tenant_id not in _rag_chain_cache:
+        retriever = get_retriever_for_tenant(tenant_id)
+        _rag_chain_cache[tenant_id] = RAGChain(retriever=retriever)
+    return _rag_chain_cache[tenant_id]
 
 
 @limiter.limit(settings.rate_limit_chat)
@@ -105,8 +117,9 @@ async def chat(request: Request, body: ChatRequest):
                 num_expansions=body.query_understanding.num_expansions
             )
 
-        # Generate response using RAG
-        result = await _get_rag_chain().generate_response(
+        # Generate response using RAG (tenant-scoped retriever)
+        tenant_id = resolve_tenant_id(request)
+        result = await _get_rag_chain(tenant_id).generate_response(
             query=effective_message,
             top_k=body.top_k,
             document_ids=body.document_ids,
@@ -229,11 +242,13 @@ async def chat_stream(request: Request, body: StreamChatRequest):
         Server-sent events stream
     """
     try:
+        tenant_id = resolve_tenant_id(request)
+
         async def generate():
             """Generate streaming response."""
             try:
-                # Stream response from RAG chain
-                async for chunk in _get_rag_chain().generate_response_stream(
+                # Stream response from RAG chain (tenant-scoped retriever)
+                async for chunk in _get_rag_chain(tenant_id).generate_response_stream(
                     query=body.message,
                     top_k=body.top_k,
                     document_ids=None,
@@ -292,7 +307,7 @@ async def chat_direct(
         Direct LLM response
     """
     try:
-        result = await _get_rag_chain().answer_question(
+        result = await _get_rag_chain().answer_question(  # /direct bypasses retrieval — no tenant scope needed
             question=message,
             use_rag=False,
             temperature=temperature,
@@ -322,8 +337,8 @@ async def chat_health():
         Health status of chat components
     """
     try:
-        # Check if LLM service is available
-        chain = _get_rag_chain()
+        # Check if LLM service is available (use default tenant for health check)
+        chain = _get_rag_chain(settings.default_tenant_id)
         llm_available = chain.llm_service.client is not None
         
         # Get retriever stats

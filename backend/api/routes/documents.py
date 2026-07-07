@@ -11,12 +11,15 @@ via filesystem fallback when Postgres is unavailable.
 
 from typing import List, Optional
 from pathlib import Path
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query, BackgroundTasks, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Query, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from functools import lru_cache
 import shutil
 import uuid
 from datetime import datetime
+
+from backend.api.middleware.tenant import resolve_tenant_id
+from backend.retrievers.tenant_registry import get_pipeline_for_tenant, get_retriever_for_tenant
 
 from backend.api.models.documents import (
     DocumentUploadResponse,
@@ -153,21 +156,28 @@ async def _db_list_documents(
         return None, []
 
 
-async def process_document_background(file_path: Path, document_id: str):
+async def process_document_background(
+    file_path: Path, document_id: str, tenant_id: str
+):
     """Background task to process uploaded document."""
     try:
-        await _get_ingestion_pipeline().ingest_document(
+        pipeline = get_pipeline_for_tenant(tenant_id)
+        await pipeline.ingest_document(
             file_path=file_path,
             document_id=document_id,
             save_index=True
         )
-        logger.info(f"Successfully processed document: {document_id}")
+        logger.info(
+            f"Successfully processed document: {document_id} "
+            f"(tenant={tenant_id})"
+        )
     except Exception as e:
         logger.error(f"Failed to process document {document_id}: {e}")
 
 
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...)
 ):
@@ -224,11 +234,14 @@ async def upload_document(
             str(file_path),
         )
 
-        # Process document in background
+        tenant_id = resolve_tenant_id(request)
+
+        # Process document in background (tenant-scoped pipeline)
         background_tasks.add_task(
             process_document_background,
             file_path,
-            document_id
+            document_id,
+            tenant_id,
         )
         
         # Create response
@@ -445,7 +458,7 @@ async def get_document(document_id: str):
 
 
 @router.delete("/{document_id}", response_model=DocumentDeleteResponse)
-async def delete_document(document_id: str):
+async def delete_document(request: Request, document_id: str):
     """
     Delete a document and its associated data.
 
@@ -478,16 +491,18 @@ async def delete_document(document_id: str):
                 detail=f"Document not found: {document_id}"
             )
         
-        # Remove all vectors and BM25 chunks for this document
-        retriever = _get_retriever()
-        faiss_removed = retriever.vector_store.delete_by_document_id(document_id)
-        bm25_removed  = _get_ingestion_pipeline().bm25_retriever.delete_by_document_id(document_id)
+        # Remove all vectors and BM25 chunks for this document (tenant-scoped)
+        tenant_id = resolve_tenant_id(request)
+        pipeline  = get_pipeline_for_tenant(tenant_id)
+        retriever = get_retriever_for_tenant(tenant_id)
+        faiss_removed = retriever.faiss_retriever.vector_store.delete_by_document_id(document_id)
+        bm25_removed  = pipeline.bm25_retriever.delete_by_document_id(document_id)
 
         # Persist both indices so the removal survives a restart
         if faiss_removed:
-            retriever.vector_store.save()
+            retriever.faiss_retriever.vector_store.save()
         if bm25_removed:
-            _get_ingestion_pipeline().bm25_retriever.save()
+            pipeline.bm25_retriever.save()
 
         # Remove from Postgres (cascade deletes chunks)
         await _db_delete(document_id)

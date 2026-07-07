@@ -28,23 +28,25 @@ from backend.retrievers.hybrid_retriever import HybridRetriever
 from backend.core.settings import settings
 from backend.core.logging import get_logger
 from backend.api.middleware.rate_limit import limiter
+from backend.api.middleware.tenant import resolve_tenant_id
+from backend.retrievers.tenant_registry import get_retriever_for_tenant
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/v1/agent", tags=["agent"])
 
-# ── Shared graph instance (lazy-initialised on first request) ─────────────
-_graph: Optional[AgentGraph] = None
+# ── Per-tenant graph instances (lazy-initialised on first request) ────────
+_graph_cache: dict = {}
 
 
-def _get_graph() -> AgentGraph:
-    global _graph
-    if _graph is None:
+def _get_graph(tenant_id: str = "default") -> AgentGraph:
+    """Return an AgentGraph wired to the tenant's retriever (created once per tenant)."""
+    if tenant_id not in _graph_cache:
         llm       = get_llm_service()
-        retriever = HybridRetriever()
-        _graph    = AgentGraph(llm=llm, retriever=retriever)
-        logger.info("AgentGraph singleton created")
-    return _graph
+        retriever = get_retriever_for_tenant(tenant_id)
+        _graph_cache[tenant_id] = AgentGraph(llm=llm, retriever=retriever)
+        logger.info(f"AgentGraph created for tenant='{tenant_id}'")
+    return _graph_cache[tenant_id]
 
 
 # ── Request / Response models ─────────────────────────────────────────────
@@ -112,7 +114,8 @@ async def agent_chat(request: Request, body: AgentChatRequest) -> AgentChatRespo
 
     try:
         start = time.time()
-        graph = _get_graph()
+        tenant_id = resolve_tenant_id(request)
+        graph = _get_graph(tenant_id)
 
         # Build initial state
         initial_state: Dict[str, Any] = {
@@ -209,6 +212,7 @@ async def agent_chat_stream(request: Request, body: AgentChatRequest) -> Streami
     """
     conversation_id = body.conversation_id or f"agent_{uuid.uuid4().hex[:12]}"
     start = time.time()
+    tenant_id = resolve_tenant_id(request)
 
     initial_state: dict = {
         "query":                body.message,
@@ -225,7 +229,7 @@ async def agent_chat_stream(request: Request, body: AgentChatRequest) -> Streami
 
     async def _generate():
         try:
-            graph = _get_graph()
+            graph = _get_graph(tenant_id)
             async for event in graph.stream_run(initial_state):
                 if event["type"] == "done":
                     # Build the full response payload for the terminal event
@@ -284,7 +288,7 @@ async def agent_chat_stream(request: Request, body: AgentChatRequest) -> Streami
 async def agent_health() -> Dict[str, Any]:
     """Health check for the agent subsystem."""
     try:
-        graph = _get_graph()
+        graph = _get_graph(settings.default_tenant_id)
         return {
             "status": "healthy",
             "graph": "compiled",
