@@ -25,6 +25,13 @@ if 'uploaded_files' not in st.session_state:
     st.session_state.uploaded_files = []
 if 'upload_key' not in st.session_state:
     st.session_state.upload_key = 0
+if "tenant_id" not in st.session_state:
+    st.session_state["tenant_id"] = "default"
+
+
+def _tenant_headers() -> dict:
+    """Return X-Tenant-ID header for the active tenant (set on the Settings page)."""
+    return {"X-Tenant-ID": st.session_state.get("tenant_id", "default")}
 
 # Tabs for different sections
 tab1, tab2, tab3 = st.tabs(["📤 Upload", "📚 Library", "📊 Statistics"])
@@ -67,6 +74,7 @@ with tab1:
                 response = requests.post(
                     f"{API_BASE_URL}/api/v1/documents/upload",
                     files=files,
+                    headers=_tenant_headers(),
                     timeout=30
                 )
                 
@@ -138,6 +146,7 @@ with tab2:
         response = requests.get(
             f"{API_BASE_URL}/api/v1/documents",
             params={"skip": 0, "limit": 100},
+            headers=_tenant_headers(),
             timeout=10
         )
 
@@ -180,6 +189,7 @@ with tab2:
                                 try:
                                     del_response = requests.delete(
                                         f"{API_BASE_URL}/api/v1/documents/{doc['document_id']}",
+                                        headers=_tenant_headers(),
                                         timeout=10
                                     )
                                     if del_response.status_code == 200:
@@ -342,6 +352,14 @@ with tab3:
 
 # Sidebar
 with st.sidebar:
+    # Tenant indicator
+    _tid = st.session_state.get("tenant_id", "default")
+    if _tid != "default":
+        st.info(f"🏢 Tenant: **{_tid}**")
+    else:
+        st.caption("🏢 Tenant: default — [change in Settings](0_⚙️_Settings)")
+
+    st.divider()
     st.header("ℹ️ Information")
 
     st.markdown("""

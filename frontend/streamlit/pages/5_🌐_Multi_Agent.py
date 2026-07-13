@@ -32,6 +32,13 @@ if "ma_messages" not in st.session_state:
     st.session_state.ma_messages = []
 if "ma_conv_id" not in st.session_state:
     st.session_state.ma_conv_id = f"ma_{int(time.time())}"
+if "tenant_id" not in st.session_state:
+    st.session_state["tenant_id"] = "default"
+
+
+def _tenant_headers() -> dict:
+    """Return X-Tenant-ID header for the active tenant (set on the Settings page)."""
+    return {"X-Tenant-ID": st.session_state.get("tenant_id", "default")}
 
 # ── Sidebar ────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -70,6 +77,13 @@ with st.sidebar:
         st.rerun()
 
     st.caption(f"Conv: `{st.session_state.ma_conv_id}`")
+
+    st.divider()
+    _tid = st.session_state.get("tenant_id", "default")
+    if _tid != "default":
+        st.info(f"🏢 Tenant: **{_tid}**")
+    else:
+        st.caption("🏢 Tenant: default — [change in Settings](0_⚙️_Settings)")
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────
@@ -201,6 +215,7 @@ if prompt := st.chat_input("Ask the multi-agent ecosystem anything about your do
             resp = requests.post(
                 f"{API_BASE_URL}/api/v1/multi-agent/chat",
                 json=payload,
+                headers=_tenant_headers(),
                 timeout=600,
             )
 

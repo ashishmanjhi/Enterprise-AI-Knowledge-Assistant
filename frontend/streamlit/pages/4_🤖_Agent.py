@@ -32,6 +32,13 @@ if "agent_messages" not in st.session_state:
     st.session_state.agent_messages = []
 if "agent_conversation_id" not in st.session_state:
     st.session_state.agent_conversation_id = f"agent_{int(time.time())}"
+if "tenant_id" not in st.session_state:
+    st.session_state["tenant_id"] = "default"
+
+
+def _tenant_headers() -> dict:
+    """Return X-Tenant-ID header for the active tenant (set on the Settings page)."""
+    return {"X-Tenant-ID": st.session_state.get("tenant_id", "default")}
 
 # ── Sidebar ────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -81,6 +88,13 @@ with st.sidebar:
             st.error(f"❌ Agent unhealthy: {h.get('error', 'unknown')}")
     except Exception:
         st.error("❌ Backend unreachable")
+
+    st.divider()
+    _tid = st.session_state.get("tenant_id", "default")
+    if _tid != "default":
+        st.info(f"🏢 Tenant: **{_tid}**")
+    else:
+        st.caption("🏢 Tenant: default — [change in Settings](0_⚙️_Settings)")
 
     st.divider()
     if st.button("🗑️ Clear conversation", use_container_width=True):
@@ -208,6 +222,7 @@ if prompt := st.chat_input("Ask a question about your documents (agent mode)…"
             with requests.post(
                 f"{API_BASE_URL}/api/v1/agent/chat/stream",
                 json=payload,
+                headers=_tenant_headers(),
                 stream=True,
                 timeout=300,
             ) as resp:

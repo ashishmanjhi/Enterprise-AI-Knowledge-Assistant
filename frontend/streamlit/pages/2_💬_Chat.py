@@ -33,6 +33,14 @@ if "conversation_id" not in st.session_state:
 if "_history_loaded" not in st.session_state:
     st.session_state._history_loaded = False
 
+if "tenant_id" not in st.session_state:
+    st.session_state["tenant_id"] = "default"
+
+
+def _tenant_headers() -> dict:
+    """Return X-Tenant-ID header for the active tenant (set on the Settings page)."""
+    return {"X-Tenant-ID": st.session_state.get("tenant_id", "default")}
+
 
 # ── Phase 8: Restore history from server on page load ────────────────────
 
@@ -155,6 +163,15 @@ with st.sidebar:
         help="Higher = more creative, Lower = more focused")
     max_tokens = st.slider("Max tokens", 300, 2000, 800, 100,
         help="Maximum length of response")
+
+    st.divider()
+
+    # Tenant indicator
+    _tid = st.session_state.get("tenant_id", "default")
+    if _tid != "default":
+        st.info(f"🏢 Tenant: **{_tid}**")
+    else:
+        st.caption("🏢 Tenant: default — [change in Settings](0_⚙️_Settings)")
 
     st.divider()
 
@@ -326,6 +343,7 @@ def _stream_response(payload: dict):
         with requests.post(
             f"{API_BASE_URL}/api/v1/chat/stream",
             json=payload,
+            headers=_tenant_headers(),
             stream=True,
             timeout=300,
         ) as resp:
@@ -441,6 +459,7 @@ if prompt := st.chat_input("Ask a question about your documents..."):
                     response = requests.post(
                         f"{API_BASE_URL}/api/v1/chat",
                         json=request_data,
+                        headers=_tenant_headers(),
                         timeout=180,
                     )
 

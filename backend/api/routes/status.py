@@ -23,10 +23,14 @@ async def get_status():
     """
     logger.info("Status check requested")
     
+    from backend.retrievers.tenant_registry import list_tenants
+
     status = {
         "application": "running",
         "version": settings.app_version,
         "environment": settings.environment,
+        "multi_tenancy_enabled": settings.multi_tenancy_enabled,
+        "tenants": list_tenants() if settings.multi_tenancy_enabled else [],
         "services": {}
     }
     

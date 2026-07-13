@@ -1,0 +1,529 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Enterprise Agentic RAG Platform — Capabilities</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #1f2328;
+    background: #fff;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  h2 { font-size: 16px; font-weight: 700; margin-top: 36px; margin-bottom: 10px;
+       padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; color: #1f2328; }
+  h3 { font-size: 13.5px; font-weight: 700; margin-top: 18px; margin-bottom: 6px; color: #1f2328; }
+  p  { margin-bottom: 10px; font-size: 13.5px; }
+  ul { margin: 6px 0 10px 20px; }
+  li { margin: 3px 0; font-size: 13.5px; }
+  .subtitle { font-size: 13px; color: #57606a; margin-bottom: 24px; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 28px 0; }
+
+  /* CAPABILITY CARDS */
+  .cap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 20px; }
+  .cap { border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 14px; }
+  .cap-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .cap-body  { font-size: 12.5px; color: #444; line-height: 1.5; }
+  .cap.done  { border-left: 3px solid #16a34a; }
+  .cap.part  { border-left: 3px solid #d97706; }
+  .cap.open  { border-left: 3px solid #dc2626; }
+
+  /* BADGES */
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 700;
+           padding: 1px 6px; border-radius: 10px; vertical-align: middle; }
+  .g  { background: #dcfce7; color: #15803d; }
+  .y  { background: #fef3c7; color: #92400e; }
+  .r  { background: #fee2e2; color: #b91c1c; }
+  .b  { background: #dbeafe; color: #1d4ed8; }
+
+  /* FEATURE TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 10px 0 16px; }
+  th { background: #f7f8fa; border: 1px solid #e5e7eb; padding: 7px 10px;
+       text-align: left; font-weight: 700; color: #1f2328; }
+  td { border: 1px solid #e5e7eb; padding: 7px 10px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafbfc; }
+
+  /* CALLOUTS */
+  .note { border-left: 4px solid #3b82d4; background: #f0f6ff;
+          padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 12px 0; }
+  .note.warn  { border-left-color: #d97706; background: #fffbeb; }
+  .note.danger { border-left-color: #dc2626; background: #fff5f5; }
+  .note p { margin: 0; font-size: 13px; }
+  .note-title { font-weight: 700; font-size: 12px; margin-bottom: 3px; }
+
+  /* SECTION NUMBERS */
+  .sec-num { display: inline-block; background: #1f2328; color: #fff;
+             border-radius: 50%; width: 20px; height: 20px; text-align: center;
+             line-height: 20px; font-size: 11px; font-weight: 700; margin-right: 6px; }
+
+  /* TOC */
+  .toc { background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px;
+         padding: 14px 18px; margin-bottom: 28px; }
+  .toc p { font-size: 12px; font-weight: 700; text-transform: uppercase;
+           letter-spacing: .06em; color: #57606a; margin-bottom: 8px; }
+  .toc-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toc-links a { font-size: 12.5px; color: #3b82d4; text-decoration: none; }
+  .toc-links a:hover { text-decoration: underline; }
+
+  .footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid #e5e7eb;
+            text-align: center; font-size: 11px; color: #57606a; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Enterprise Agentic RAG Platform</h1>
+<p class="subtitle">v15.0.0 — Complete capability reference — what you can do right now, what's partial, and what's still missing</p>
+
+<div class="toc">
+  <p>Jump to section</p>
+  <div class="toc-links">
+    <a href="#doc-mgmt">Document Management</a>
+    <a href="#chat">Chat &amp; RAG</a>
+    <a href="#agent">Agentic RAG</a>
+    <a href="#multi-agent">Multi-Agent</a>
+    <a href="#kg">Knowledge Graph</a>
+    <a href="#safety">Safety &amp; Guardrails</a>
+    <a href="#memory">Memory</a>
+    <a href="#eval">Evaluation</a>
+    <a href="#auth">Auth &amp; Security</a>
+    <a href="#ops">Ops &amp; Monitoring</a>
+    <a href="#llm">LLM Providers</a>
+    <a href="#frontend">Frontend UI</a>
+    <a href="#api">API Surface</a>
+    <a href="#missing">What's Missing</a>
+  </div>
+</div>
+
+
+<h2 id="doc-mgmt"><span class="sec-num">1</span> Document Management</h2>
+
+<div class="cap-grid">
+  <div class="cap done">
+    <div class="cap-title">Upload PDF &amp; DOCX</div>
+    <div class="cap-body">POST /api/v1/documents/upload. Files saved to <code>data/raw/</code>. Background task runs ingestion immediately. Max 10 MB. Supports only .pdf and .docx.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">List &amp; Search Documents</div>
+    <div class="cap-body">GET /api/v1/documents with DB-backed listing. Filename search filter in the UI. Pagination via skip/limit.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Delete Document</div>
+    <div class="cap-body">DELETE /api/v1/documents/{id} removes the file, soft-deletes all FAISS vectors, removes from BM25, then runs index compaction automatically.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Document Statistics</div>
+    <div class="cap-body">GET /api/v1/documents/stats/overview returns total docs, chunk counts, vector store size, extraction backend info.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Table Extraction (PDF)</div>
+    <div class="cap-body">pdfplumber extracts tables per page → Markdown [TABLE] chunks. Each table row/column is preserved and fully searchable.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Chart &amp; Image AI (PDF)</div>
+    <div class="cap-body">llava:7b via Ollama describes charts, graphs, and diagrams as [CHART] text chunks. Runs locally, no API key needed. Requires <code>ollama pull llava:7b</code>.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">OCR Fallback</div>
+    <div class="cap-body">pytesseract activates on pages with no extractable text (scanned PDFs). Optional install — skipped gracefully when absent.</div>
+  </div>
+  <div class="cap part">
+    <div class="cap-title">Re-index / Update Document</div>
+    <div class="cap-body"><span class="badge y">Partial</span> No endpoint to re-process an already-uploaded file. You must delete and re-upload to pick up changes.</div>
+  </div>
+</div>
+
+
+<h2 id="chat"><span class="sec-num">2</span> Chat &amp; RAG</h2>
+
+<div class="cap-grid">
+  <div class="cap done">
+    <div class="cap-title">RAG Chat (POST /api/v1/chat)</div>
+    <div class="cap-body">Ask questions; system retrieves relevant chunks, builds context, and generates an answer. Returns sources with chunk IDs, filenames, scores, and page numbers.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Streaming Chat (SSE)</div>
+    <div class="cap-body">POST /api/v1/chat/stream — tokens streamed as Server-Sent Events. Streamlit UI renders them token-by-token. Sources sent as a trailing sentinel line.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Direct LLM Chat (no RAG)</div>
+    <div class="cap-body">POST /api/v1/chat/direct — sends message straight to Ollama without any retrieval. Useful for general questions or testing the LLM baseline.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Query Reformulation</div>
+    <div class="cap-body">LLM rewrites vague or pronoun-heavy queries ("what does it say about…") using the last 3 conversation turns for context.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Query Expansion</div>
+    <div class="cap-body">Generates 3 alternative phrasings for the same question. Each expansion is retrieved independently; results fused via RRF.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">HyDE Retrieval</div>
+    <div class="cap-body">Generates a short hypothetical answer and uses it as the FAISS embedding query. The original question is still used for BM25 — no keyword bleed.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Hybrid Retrieval (FAISS + BM25)</div>
+    <div class="cap-body">Both semantic and keyword search run in parallel via asyncio. Results merged with Reciprocal Rank Fusion. Configurable per-source weights.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Cross-Encoder Reranking</div>
+    <div class="cap-body">ms-marco-MiniLM-L-6-v2 scores each (query, chunk) pair and keeps only top-N. Enable per-request via <code>use_reranking: true</code>. Off by default.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Retrieval Method Selection</div>
+    <div class="cap-body">Per-request override: <code>hybrid</code> (default), <code>faiss</code> (semantic only), or <code>bm25</code> (keyword only).</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Source Attribution</div>
+    <div class="cap-body">Every response includes chunk IDs, filenames, page numbers, FAISS scores, BM25 scores, and ranks for full provenance.</div>
+  </div>
+</div>
+
+<div class="note">
+  <p class="note-title">Rate Limits (Phase 15)</p>
+  <p><code>POST /api/v1/chat</code> → 20/min  |  <code>POST /api/v1/chat/stream</code> → 10/min  |  <code>POST /api/v1/chat/direct</code> → 30/min. Per IP. Returns HTTP 429 on breach. Disable with <code>RATE_LIMIT_ENABLED=false</code>.</p>
+</div>
+
+
+<h2 id="agent"><span class="sec-num">3</span> Agentic RAG (LangGraph)</h2>
+
+<p>POST /api/v1/agent/chat — runs a full LangGraph state machine instead of the linear RAG chain. Limit: 10/min per IP.</p>
+
+<table>
+  <tr><th>Node</th><th>What it does</th></tr>
+  <tr><td><strong>route_query</strong></td><td>LLM classifies query → selects hybrid / faiss / bm25 strategy</td></tr>
+  <tr><td><strong>rewrite_query</strong></td><td>Rewrites vague query before retrieval (configurable, max 2 rewrites)</td></tr>
+  <tr><td><strong>retrieve</strong></td><td>Runs HybridRetriever with the chosen strategy</td></tr>
+  <tr><td><strong>grade_documents</strong></td><td>LLM scores each chunk YES/NO for relevance; irrelevant chunks dropped</td></tr>
+  <tr><td><strong>generate</strong></td><td>Builds context from graded chunks; calls LLM for final answer</td></tr>
+  <tr><td><strong>check_grounding</strong></td><td>LLM verifies answer is supported by retrieved context (GROUNDED / HALLUCINATION)</td></tr>
+</table>
+
+<p>If grounding fails and rewrite budget remains, the graph loops back and tries again with a different strategy. Response includes full trace (every node logged), grounding verdict, and rewrite count.</p>
+
+<div class="note warn">
+  <p class="note-title">Speed on CPU-only Ollama</p>
+  <p>Each query runs 3–6 LLM calls. On CPU with qwen3:4b expect 2–5 minutes per query. Disable grading/grounding to speed up: <code>AGENT_ENABLE_DOCUMENT_GRADING=false</code>, <code>AGENT_ENABLE_GROUNDING_CHECK=false</code>.</p>
+</div>
+
+
+<h2 id="multi-agent"><span class="sec-num">4</span> Multi-Agent Ecosystem</h2>
+
+<p>POST /api/v1/multi-agent/chat — 5-agent pipeline. Limit: 5/min per IP.</p>
+
+<div class="cap-grid">
+  <div class="cap done">
+    <div class="cap-title">Intent Classification</div>
+    <div class="cap-body">LLM classifies query as <code>research</code>, <code>retrieval</code>, or <code>general</code>. Research path triggers ResearchAgent; others go straight to RetrievalAgent.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Research Agent</div>
+    <div class="cap-body">Decomposes complex questions into ≤4 sub-questions. Answers each independently. LLM synthesises all findings into a research summary.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Retrieval Agent</div>
+    <div class="cap-body">Expands query into N variants, runs parallel multi-strategy retrieval for each, deduplicates by chunk_id, optionally reranks.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Knowledge Agent</div>
+    <div class="cap-body">Extracts named entities from the query, looks them up in the knowledge graph, builds enriched context string for generation.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Evaluation Agent</div>
+    <div class="cap-body">Scores the draft answer on source coverage, confidence, and length. Optional full RAGAS evaluation (<code>EVAL_AGENT_USE_RAGAS=true</code>).</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Governance Agent</div>
+    <div class="cap-body">Runs full guardrails pipeline on the draft answer. Checks attribution completeness and confidence threshold. Can replace answer with a disclaimer.</div>
+  </div>
+</div>
+
+<div class="note warn">
+  <p class="note-title">Performance Reality</p>
+  <p>Research path runs 15+ LLM calls per query on CPU-only Ollama. Realistic time: 10–30 minutes for a complex research question. Best used with cloud LLM providers (OpenAI/Gemini) for practical speed.</p>
+</div>
+
+
+<h2 id="kg"><span class="sec-num">5</span> Knowledge Graph</h2>
+
+<div class="cap-grid">
+  <div class="cap done">
+    <div class="cap-title">Build Knowledge Graph</div>
+    <div class="cap-body">POST /api/v1/kg/build — LLM extracts entities (PERSON, ORG, PRODUCT, LOCATION, CONCEPT, TECHNICAL) and relation triples from indexed documents. Regex fallback when LLM fails.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Query Entities &amp; Subgraph</div>
+    <div class="cap-body">GET /api/v1/kg/query — find entities by name substring, expand to 2-hop ego-graph neighbourhood. Returns enriched context for RAG.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Browse Entities &amp; Relations</div>
+    <div class="cap-body">GET /api/v1/kg/entities and /kg/relations — list all extracted entities and relation triples with confidence scores.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Hybrid Graph + Vector Retrieval</div>
+    <div class="cap-body">HybridGraphRetriever fuses FAISS+BM25 results with graph-based entity results using RRF (0.6 vector / 0.4 graph weights, configurable).</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">KG Statistics</div>
+    <div class="cap-body">GET /api/v1/kg/stats — node count, edge count, entity type distribution, top entities by degree.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Clear Knowledge Graph</div>
+    <div class="cap-body">DELETE /api/v1/kg/clear — wipes the graph and deletes the JSON persistence file.</div>
+  </div>
+</div>
+
+
+<h2 id="safety"><span class="sec-num">6</span> Safety &amp; Guardrails</h2>
+
+<p>All guardrails run on every chat request. Input checks run before the LLM; output checks run after generation.</p>
+
+<table>
+  <tr><th>Detector</th><th>Method</th><th>Triggers</th><th>Default Action</th></tr>
+  <tr><td>Prompt Injection</td><td>14 regex patterns</td><td>Jailbreaks, instruction overrides, delimiter injection, role override</td><td>Block (HTTP 400)</td></tr>
+  <tr><td>PII Detection</td><td>8 regex patterns</td><td>SSN, credit cards, emails, phone numbers, API keys, DOB, IP addresses</td><td>Warn + redact (no block)</td></tr>
+  <tr><td>Toxicity</td><td>7 regex patterns</td><td>Violence, self-harm, hate speech, harassment</td><td>Block (HTTP 400)</td></tr>
+  <tr><td>Hallucination</td><td>LLM-as-judge + token overlap</td><td>Answer uses facts not in retrieved context</td><td>Warn + replace answer</td></tr>
+</table>
+
+<p>You can test guardrails directly via <code>POST /api/v1/guardrails/check/input</code> and <code>/check/output</code>, or check active settings via <code>GET /api/v1/guardrails/status</code>. All blocking behaviours are individually toggleable via env vars.</p>
+
+
+<h2 id="memory"><span class="sec-num">7</span> Conversational Memory</h2>
+
+<div class="cap-grid">
+  <div class="cap done">
+    <div class="cap-title">Per-Conversation History</div>
+    <div class="cap-body">Redis-backed message store, 24 h TTL. Automatically injected into every RAG prompt. Falls back to in-process dict if Redis is unavailable — transparent to the user.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">History Summarisation</div>
+    <div class="cap-body">When a conversation exceeds the threshold (default 10 turns), the LLM summarises the oldest half into a single system message, keeping the context window small.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Memory API</div>
+    <div class="cap-body">GET /api/v1/memory/{id} — fetch full history. GET /api/v1/memory/{id}/info — metadata. DELETE /api/v1/memory/{id} — clear conversation.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Cross-Session Persistence</div>
+    <div class="cap-body">History survives Streamlit page refreshes. The chat page reloads history from Redis on startup via _restore_history_from_server().</div>
+  </div>
+</div>
+
+
+<h2 id="eval"><span class="sec-num">8</span> Evaluation Framework (RAGAS)</h2>
+
+<table>
+  <tr><th>Metric</th><th>Ground Truth Needed?</th><th>Description</th></tr>
+  <tr><td>Faithfulness</td><td>No</td><td>Answer is fully supported by retrieved context</td></tr>
+  <tr><td>Answer Relevancy</td><td>No</td><td>Answer actually addresses the question asked</td></tr>
+  <tr><td>Context Precision</td><td>No</td><td>Retrieved chunks are relevant to the question</td></tr>
+  <tr><td>Context Recall</td><td>Yes</td><td>Context contains all info needed to answer</td></tr>
+  <tr><td>Factual Correctness</td><td>Yes</td><td>Answer matches a reference/ground-truth answer</td></tr>
+</table>
+
+<p>Trigger via <code>POST /api/v1/evaluate</code> or the 📊 Evaluate Streamlit page. Capped at 50 samples per run. Uses the configured Ollama model as LLM judge — no external API needed.</p>
+
+
+<h2 id="auth"><span class="sec-num">9</span> Auth &amp; Security</h2>
+
+<div class="cap-grid">
+  <div class="cap done">
+    <div class="cap-title">JWT Bearer Auth</div>
+    <div class="cap-body">POST /auth/token — issue signed JWT. JWTAuthMiddleware enforces on all routes when AUTH_ENABLED=true. Transparent pass-through in development mode.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Role-Based Admin Guard</div>
+    <div class="cap-body">Admin endpoints require role=admin in the JWT claim. Verified by require_admin() FastAPI dependency. Separate admin/user passwords in .env.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Rate Limiting (Phase 15)</div>
+    <div class="cap-body">slowapi per-IP limits on all 5 LLM endpoints. X-Forwarded-For aware (respects Caddy reverse-proxy header). Returns 429 with Retry-After header.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">JWT Secret Startup Check</div>
+    <div class="cap-body">Hard RuntimeError in production mode if secret is still the default. Warning in development. Prevents accidental insecure deployments.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">CORS Configuration</div>
+    <div class="cap-body">Locked to localhost:8501 and localhost:3000 by default. Override with CORS_ORIGINS env var for production.</div>
+  </div>
+  <div class="cap part">
+    <div class="cap-title">Password Security</div>
+    <div class="cap-body"><span class="badge y">Partial</span> Constant-time comparison (hmac.compare_digest). Credentials loaded from .env. No bcrypt/argon2 hashing yet — passwords are plain strings.</div>
+  </div>
+</div>
+
+
+<h2 id="ops"><span class="sec-num">10</span> Ops, Observability &amp; Administration</h2>
+
+<div class="cap-grid">
+  <div class="cap done">
+    <div class="cap-title">Health Endpoints</div>
+    <div class="cap-body">GET /health (liveness), /healthz (Kubernetes), /readyz (readiness). All return JSON status with service name and version.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Service Status</div>
+    <div class="cap-body">GET /api/v1/status — checks Postgres, Redis, and Ollama connectivity in real time. Each service reported as connected / unreachable with latency.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Structured Logging</div>
+    <div class="cap-body">Rotating file handler (logs/app.log, 10 MB, 5 backups) + console. Every module uses get_logger(__name__) — no print() calls.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">LangSmith Tracing</div>
+    <div class="cap-body">Every AgentGraph.run() and all its nodes traced in LangSmith when LANGSMITH_ENABLED=true + LANGSMITH_API_KEY set.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">OpenTelemetry Spans</div>
+    <div class="cap-body">FastAPI HTTP spans + llm.generate / agent.run spans exported to any OTLP collector (Jaeger, Tempo, etc.) when OTEL_ENABLED=true.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">PostgreSQL Schema</div>
+    <div class="cap-body">SQLAlchemy ORM + Alembic migration for documents, document_chunks, conversations, conversation_messages, feedback. Apply with alembic upgrade head.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">User Feedback Collection</div>
+    <div class="cap-body">POST /api/v1/feedback — stores thumbs-up/down with conversation_id and response_id to data/feedback.jsonl. 👍👎 buttons in Chat UI.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Admin Endpoints</div>
+    <div class="cap-body">POST /api/v1/admin/clear-vector-stores — wipes FAISS + BM25 indices. GET /api/v1/admin/system-info — Python version, memory, disk, OS info.</div>
+  </div>
+  <div class="cap done">
+    <div class="cap-title">Container Deploy (Podman)</div>
+    <div class="cap-body">deploy/podman/ has a full Compose stack: PostgreSQL, Redis, FastAPI, Streamlit, Caddy (TLS termination). Resource limits and health checks configured.</div>
+  </div>
+</div>
+
+
+<h2 id="llm"><span class="sec-num">11</span> LLM Providers</h2>
+
+<table>
+  <tr><th>Provider</th><th>Status</th><th>Activate</th><th>Used for</th></tr>
+  <tr><td>Ollama (local)</td><td><span class="badge g">Active default</span></td><td>Run <code>ollama serve</code></td><td>All LLM calls — generation, agents, KG extraction, guardrails</td></tr>
+  <tr><td>qwen3:4b</td><td><span class="badge g">Default model</span></td><td><code>ollama pull qwen3:4b</code></td><td>Primary LLM</td></tr>
+  <tr><td>llava:7b</td><td><span class="badge b">Vision model</span></td><td><code>ollama pull llava:7b</code></td><td>Chart/image descriptions in PDF ingestion</td></tr>
+  <tr><td>OpenAI</td><td><span class="badge b">Implemented</span></td><td>Set <code>OPENAI_API_KEY</code></td><td>Hot-swap via DEFAULT_PROVIDER=openai</td></tr>
+  <tr><td>Anthropic</td><td><span class="badge y">Provider-layer only</span></td><td>Set <code>ANTHROPIC_API_KEY</code></td><td>Available via providers/ but not wired to agents/RAG hot path</td></tr>
+  <tr><td>Gemini</td><td><span class="badge y">Provider-layer only</span></td><td>Set <code>GOOGLE_API_KEY</code></td><td>Same as Anthropic</td></tr>
+  <tr><td>Azure OpenAI</td><td><span class="badge y">Provider-layer only</span></td><td>Set <code>AZURE_OPENAI_*</code> vars</td><td>Same as Anthropic</td></tr>
+  <tr><td>HuggingFace</td><td><span class="badge y">Provider-layer only</span></td><td>Set <code>DEFAULT_PROVIDER=huggingface</code></td><td>Local transformers models</td></tr>
+</table>
+
+<div class="note">
+  <p class="note-title">Note on Anthropic / Gemini / Azure</p>
+  <p>These providers are fully implemented in <code>backend/providers/</code> but the agent/RAG hot path uses <code>LLMService</code> which only routes Ollama and OpenAI. To use other providers, set <code>DEFAULT_PROVIDER=openai</code> and point the OpenAI client at the appropriate base URL, or contribute the wiring.</p>
+</div>
+
+
+<h2 id="frontend"><span class="sec-num">12</span> Frontend UI (Streamlit)</h2>
+
+<table>
+  <tr><th>Page</th><th>What you can do</th></tr>
+  <tr><td>🏠 Home (app.py)</td><td>Backend connectivity status, service health dashboard, quick-start guide, system metrics</td></tr>
+  <tr><td>📄 Documents</td><td>Upload PDF/DOCX, browse library with filename search, view extraction stats (pdfplumber/OCR/llava), delete documents</td></tr>
+  <tr><td>💬 Chat</td><td>Streaming RAG chat, session management, enable/disable query understanding techniques and reranking per-message, see source citations, guardrail warning badges, thumbs up/down feedback, history restore on reload</td></tr>
+  <tr><td>📊 Evaluate</td><td>Run RAGAS evaluation — manual sample entry or JSON batch input, score charts, per-metric breakdown</td></tr>
+  <tr><td>🤖 Agent</td><td>LangGraph agentic chat, view full node trace (route→retrieve→grade→generate→ground), grounding badge, rewrite count, strategy chosen</td></tr>
+  <tr><td>🌐 Multi Agent</td><td>5-agent pipeline, per-agent result cards, quality metric scores, entity panel, governance pass/fail badge</td></tr>
+  <tr><td>🕸️ Knowledge Graph</td><td>Build KG, query entities/subgraph, browse entities and relations tabs, live stats sidebar</td></tr>
+</table>
+
+
+<h2 id="api"><span class="sec-num">13</span> Full API Surface</h2>
+
+<table>
+  <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+  <tr><td>POST</td><td>/api/v1/documents/upload</td><td>Upload document</td></tr>
+  <tr><td>GET</td><td>/api/v1/documents</td><td>List documents</td></tr>
+  <tr><td>GET</td><td>/api/v1/documents/{id}</td><td>Get document details</td></tr>
+  <tr><td>DELETE</td><td>/api/v1/documents/{id}</td><td>Delete + remove from all indices</td></tr>
+  <tr><td>GET</td><td>/api/v1/documents/stats/overview</td><td>System statistics</td></tr>
+  <tr><td>POST ⚡</td><td>/api/v1/chat</td><td>RAG chat (20/min)</td></tr>
+  <tr><td>POST ⚡</td><td>/api/v1/chat/stream</td><td>Streaming chat SSE (10/min)</td></tr>
+  <tr><td>POST ⚡</td><td>/api/v1/chat/direct</td><td>Direct LLM no retrieval (30/min)</td></tr>
+  <tr><td>POST ⚡</td><td>/api/v1/agent/chat</td><td>LangGraph agentic pipeline (10/min)</td></tr>
+  <tr><td>GET</td><td>/api/v1/agent/health</td><td>Agent subsystem health</td></tr>
+  <tr><td>POST ⚡</td><td>/api/v1/multi-agent/chat</td><td>5-agent pipeline (5/min)</td></tr>
+  <tr><td>GET</td><td>/api/v1/multi-agent/health</td><td>Orchestrator health</td></tr>
+  <tr><td>POST</td><td>/api/v1/evaluate</td><td>Run RAGAS evaluation</td></tr>
+  <tr><td>GET</td><td>/api/v1/evaluate/metrics</td><td>Available metrics list</td></tr>
+  <tr><td>GET</td><td>/api/v1/memory/{id}</td><td>Fetch conversation history</td></tr>
+  <tr><td>DELETE</td><td>/api/v1/memory/{id}</td><td>Clear conversation</td></tr>
+  <tr><td>POST</td><td>/api/v1/guardrails/check/input</td><td>Test input safety</td></tr>
+  <tr><td>POST</td><td>/api/v1/guardrails/check/output</td><td>Test output safety</td></tr>
+  <tr><td>GET</td><td>/api/v1/guardrails/status</td><td>Active guardrail config</td></tr>
+  <tr><td>POST</td><td>/api/v1/kg/build</td><td>Build knowledge graph</td></tr>
+  <tr><td>GET</td><td>/api/v1/kg/query</td><td>Query entities + subgraph</td></tr>
+  <tr><td>GET</td><td>/api/v1/kg/stats</td><td>KG statistics</td></tr>
+  <tr><td>GET</td><td>/api/v1/kg/entities</td><td>List all entities</td></tr>
+  <tr><td>GET</td><td>/api/v1/kg/relations</td><td>List all relations</td></tr>
+  <tr><td>DELETE</td><td>/api/v1/kg/clear</td><td>Wipe knowledge graph</td></tr>
+  <tr><td>POST</td><td>/api/v1/feedback</td><td>Submit thumbs up/down</td></tr>
+  <tr><td>POST</td><td>/api/v1/admin/clear-vector-stores</td><td>Reset indices</td></tr>
+  <tr><td>GET</td><td>/api/v1/admin/system-info</td><td>System info</td></tr>
+  <tr><td>POST</td><td>/auth/token</td><td>Issue JWT</td></tr>
+  <tr><td>GET</td><td>/health, /healthz, /readyz</td><td>Liveness / readiness</td></tr>
+  <tr><td>GET</td><td>/api/v1/status</td><td>Service health</td></tr>
+  <tr><td>GET</td><td>/docs</td><td>Interactive Swagger UI</td></tr>
+</table>
+<p style="font-size:11.5px;color:#57606a">⚡ = rate-limited endpoint</p>
+
+
+<h2 id="missing"><span class="sec-num">14</span> What's Still Missing / Incomplete</h2>
+
+<div class="cap-grid">
+  <div class="cap open">
+    <div class="cap-title">Agent Streaming (SSE)</div>
+    <div class="cap-body"><span class="badge r">Open</span> Both agent endpoints return full JSON only. No token-by-token streaming for LangGraph execution — you wait for the complete response.</div>
+  </div>
+  <div class="cap open">
+    <div class="cap-title">Feedback Analytics API</div>
+    <div class="cap-body"><span class="badge r">Open</span> Thumbs data is written to JSONL but there is no endpoint to query it, aggregate scores, or export trends.</div>
+  </div>
+  <div class="cap open">
+    <div class="cap-title">Agent &amp; KG Unit Tests</div>
+    <div class="cap-body"><span class="badge r">Open</span> The most complex code — AgentGraph, MultiAgentOrchestrator, GraphStore, EntityExtractor — has zero test coverage.</div>
+  </div>
+  <div class="cap open">
+    <div class="cap-title">Document Re-indexing</div>
+    <div class="cap-body"><span class="badge r">Open</span> No endpoint to re-process an existing document. Delete + re-upload is the only path.</div>
+  </div>
+  <div class="cap part">
+    <div class="cap-title">Postgres Metadata Integration</div>
+    <div class="cap-body"><span class="badge y">Partial</span> Schema exists and migration is applied. The ingestion pipeline is not yet fully wired to write all metadata fields to Postgres end-to-end.</div>
+  </div>
+  <div class="cap open">
+    <div class="cap-title">Multi-Tenancy</div>
+    <div class="cap-body"><span class="badge r">Open</span> All users share one FAISS + BM25 index. No namespace or tenant isolation. Not suitable for multi-user production without this.</div>
+  </div>
+  <div class="cap open">
+    <div class="cap-title">Retry Logic (Ollama)</div>
+    <div class="cap-body"><span class="badge r">Open</span> No automatic retry when Ollama times out on model load. A single cold-start failure returns a 500. Add tenacity retry for resilience.</div>
+  </div>
+  <div class="cap open">
+    <div class="cap-title">Anthropic / Gemini Hot-Path</div>
+    <div class="cap-body"><span class="badge r">Open</span> Provider implementations exist in backend/providers/ but are not wired to the RAG / agent hot path. Only Ollama and OpenAI are truly usable end-to-end.</div>
+  </div>
+</div>
+
+<hr />
+
+<div class="note">
+  <p class="note-title">Bottom Line</p>
+  <p>This is a fully functional, locally-running RAG platform for enterprise document Q&amp;A. Upload your PDFs, ask questions in three different modes (linear RAG, agentic, multi-agent), get source citations, track conversation history, and evaluate quality — all without sending data to any external service. The main gaps for a real production deployment are: multi-tenancy, agent streaming, and complete Postgres wiring.</p>
+</div>
+
+<div class="footer">
+  <p>Enterprise Agentic RAG Platform v15.0.0 — Made with IBM Bob</p>
+</div>
+</div>
+</body>
+</html>
